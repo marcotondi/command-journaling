@@ -1,0 +1,94 @@
+### Variables
+@baseUrl = http://localhost:8080
+@contentType = application/json
+@actor = test-user
+@commandId = 10a2b7cd-e19d-4997-a659-10d029c5e09e
+
+###############################################
+# COMMANDS
+###############################################
+
+### Create User - Melania
+POST {{baseUrl}}/api/commands/users/create HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+  "username": "melania",
+  "email": "melania@example.com",
+  "actor": "{{actor}}"
+}
+
+### Create User - John
+POST {{baseUrl}}/api/commands/users/create HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+  "username": "galileo",
+  "email": "galileo@example.com",
+  "actor": "{{actor}}"
+}
+
+### Delete User 
+POST {{baseUrl}}/api/commands/users/delete HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+  "email": "galileo@example.com",
+  "actor": "{{actor}}"
+}
+
+### Composite Command
+
+POST {{baseUrl}}/api/commands/composite HTTP/1.1
+Content-Type: application/json
+
+{
+  "actor": "admin",
+  "commands": [
+    {
+      "type": "CreateUser",
+      "payload": {
+        "username": "john.doe",
+        "email": "john.doe@example.com"
+      }
+    },
+    {
+      "type": "Sleep",
+      "payload": {
+        "seconds": 30
+      }
+    },
+    {
+      "type": "DeleteUser",
+      "payload": {
+        "email": "john.doe@example.com"
+      }
+    }
+  ]
+}
+
+###############################################
+# JOURNAL
+###############################################
+
+### Get All Journal Entries
+GET {{baseUrl}}/api/journal HTTP/1.1
+
+### Get Journal Entry by Command ID
+GET {{baseUrl}}/api/journal/{{commandId}} HTTP/1.1
+
+###############################################
+# STATISTICS
+###############################################
+
+### Get Commands Statistics
+GET {{baseUrl}}/api/statistics/commands HTTP/1.1
+
+### Get Average Time for CreateUserCommand
+GET {{baseUrl}}/api/statistics/avg-time/dev.marcotondi.application.command.CreateUserCommand HTTP/1.1
+
+### Get Average Time for UpdateUserCommand
+GET {{baseUrl}}/api/statistics/avg-time/dev.marcotondi.application.command.UpdateUserCommand HTTP/1.1
+
+### Get Average Time for DeleteUserCommand
+GET {{baseUrl}}/api/statistics/avg-time/dev.marcotondi.application.command.DeleteUserCommand HTTP/1.1

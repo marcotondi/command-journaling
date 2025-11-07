@@ -1,0 +1,44 @@
+# --- Imposta comportamento globale ---
+# Forza tutti i file di testo a usare LF anche su Windows
+* text eol=lf
+
+# File di codice sorgente
+*.java     text eol=lf
+*.xml      text eol=lf
+*.properties text eol=lf
+*.yml      text eol=lf
+*.yaml     text eol=lf
+*.gradle   text eol=lf
+*.md       text eol=lf
+*.sh       text eol=lf
+*.txt      text eol=lf
+
+# File di configurazione
+*.gitignore text eol=lf
+*.gitattributes text eol=lf
+*.editorconfig text eol=lf
+*.json     text eol=lf
+
+# Script e build tools
+*.kts      text eol=lf
+*.cfg      text eol=lf
+
+# --- Binari o file da non modificare ---
+*.jar      binary
+*.war      binary
+*.ear      binary
+*.class    binary
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.gif      binary
+*.ico      binary
+*.pdf      binary
+*.zip      binary
+*.tar      binary
+*.gz       binary
+*.7z       binary
+
+# --- File di sistema ---
+*.exe      binary
+*.dll      binary
