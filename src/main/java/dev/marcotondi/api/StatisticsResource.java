@@ -1,12 +1,17 @@
 package dev.marcotondi.api;
 
-import dev.marcotondi.service.StatisticsService;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
-
 import java.time.LocalDateTime;
 import java.util.Map;
+
+import dev.marcotondi.service.StatisticsService;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 @Path("/api/statistics")
 @Produces(MediaType.APPLICATION_JSON)
@@ -25,9 +30,18 @@ public class StatisticsResource {
         return statisticsService.getCommandStatistics(fromDate, toDate);
     }
 
+
+    public record AverageTimeResponse(String commandType, String averageTime) {}
+
     @GET
     @Path("/avg-time/{commandType}")
-    public Double getAverageTime(@PathParam("commandType") String commandType) {
-        return statisticsService.getAverageExecutionTime(commandType);
+    public Response getAverageTime(@PathParam("commandType") String commandType) {
+
+        String avg = statisticsService.getAverageExecutionTime(commandType) + " ms";
+        AverageTimeResponse response = new AverageTimeResponse(commandType, avg);
+
+        return Response.ok()
+                .entity(response)
+                .build();
     }
 }

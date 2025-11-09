@@ -3,9 +3,9 @@ package dev.marcotondi.application;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 import dev.marcotondi.domain.model.Command;
-import jakarta.json.bind.annotation.JsonbCreator;
-import jakarta.json.bind.annotation.JsonbProperty;
 
 /**
  * A command to create a new user.
@@ -20,14 +20,14 @@ public record CreateUserCommand(
         String email) implements Command<String> {
 
     // Costruttore per deserializzazione JSON
-    @JsonbCreator
+    @JsonCreator
     public CreateUserCommand(
-            @JsonbProperty("commandId") UUID commandId,
-            @JsonbProperty("timestamp") LocalDateTime timestamp,
-            @JsonbProperty("actor") String actor,
-            @JsonbProperty("commandType") String commandType,
-            @JsonbProperty("username") String username,
-            @JsonbProperty("email") String email) {
+            UUID commandId,
+            LocalDateTime timestamp,
+            String actor,
+            String commandType,
+            String username,
+            String email) {
         this.commandId = commandId;
         this.timestamp = timestamp;
         this.actor = actor;

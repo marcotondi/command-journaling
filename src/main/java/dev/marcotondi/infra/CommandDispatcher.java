@@ -5,6 +5,9 @@ import java.time.LocalDateTime;
 
 import org.jboss.logging.Logger;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import dev.marcotondi.domain.entry.JournalEntry;
 import dev.marcotondi.domain.exception.CommandExecutionException;
 import dev.marcotondi.domain.handler.CommandHandler;
@@ -15,8 +18,7 @@ import dev.marcotondi.infra.repository.JournalRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
-import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbException;
+
 
 @ApplicationScoped
 public class CommandDispatcher {
@@ -33,7 +35,7 @@ public class CommandDispatcher {
     Event<CommandExecutedEvent> commandEventPublisher;
 
     @Inject
-    Jsonb jsonb;
+    ObjectMapper objectMapper;
 
     public <R> R dispatch(Command<R> command) {
         JournalEntry entry = createJournalEntry(command, CommandStatus.PENDING);
@@ -75,8 +77,9 @@ public class CommandDispatcher {
         entry.setStartTime(LocalDateTime.now());
         entry.setStatus(status.name());
         try {
-            entry.setCommandPayload(jsonb.toJson(command));
-        } catch (JsonbException e) {
+            String json = objectMapper.writeValueAsString(command);
+            entry.setCommandPayload(json);
+        } catch (JsonProcessingException e) {
             LOG.errorf(e, "Error serializing command payload for command ID %s", command.commandId());
             entry.setCommandPayload("{\"error\": \"Serialization failed\"}");
         }
@@ -93,8 +96,9 @@ public class CommandDispatcher {
         entry.setStatus(CommandStatus.COMPLETED.name());
         entry.setExecutionTimeMs(duration);
         try {
-            entry.setResult(jsonb.toJson(result));
-        } catch (JsonbException e) {
+            String json = objectMapper.writeValueAsString(result);
+            entry.setResult(json);
+        } catch (JsonProcessingException e) {
             LOG.errorf(e, "Error serializing result for command ID %s", entry.getCommandId());
             entry.setResult("{\"error\": \"Result serialization failed\"}");
         }

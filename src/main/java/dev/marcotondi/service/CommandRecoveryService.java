@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.jboss.logging.Logger;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import dev.marcotondi.domain.entry.JournalEntry;
 import dev.marcotondi.domain.model.Command;
 import dev.marcotondi.infra.CommandDispatcher;
@@ -13,7 +15,6 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
-import jakarta.json.bind.Jsonb;
 
 @ApplicationScoped
 public class CommandRecoveryService {
@@ -27,7 +28,7 @@ public class CommandRecoveryService {
     CommandDispatcher dispatcher;
 
     @Inject
-    Jsonb jsonb;
+    ObjectMapper objectMapper;
 
     void onStart(@Observes @Priority(Integer.MAX_VALUE) StartupEvent ev) {
         LOG.info("Starting recovery of interrupted commands...");
@@ -64,6 +65,6 @@ public class CommandRecoveryService {
         // The commandType in the journal now holds the fully qualified class name,
         // making reconstruction reliable.
         Class<?> commandClass = Class.forName(entry.getCommandType());
-        return (Command<?>) jsonb.fromJson(entry.getCommandPayload(), commandClass);
+        return (Command<?>) objectMapper.readValue(entry.getCommandPayload(), commandClass);
     }
 }

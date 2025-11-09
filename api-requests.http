@@ -2,7 +2,7 @@
 @baseUrl = http://localhost:8080
 @contentType = application/json
 @actor = test-user
-@commandId = 10a2b7cd-e19d-4997-a659-10d029c5e09e
+@commandId = 8b48bfce-6f22-454d-aa2d-28d4c2712371
 
 ###############################################
 # COMMANDS
@@ -28,7 +28,7 @@ Content-Type: {{contentType}}
   "actor": "{{actor}}"
 }
 
-### Delete User 
+### Delete User
 POST {{baseUrl}}/api/commands/users/delete HTTP/1.1
 Content-Type: {{contentType}}
 
@@ -85,10 +85,10 @@ GET {{baseUrl}}/api/journal/{{commandId}} HTTP/1.1
 GET {{baseUrl}}/api/statistics/commands HTTP/1.1
 
 ### Get Average Time for CreateUserCommand
-GET {{baseUrl}}/api/statistics/avg-time/dev.marcotondi.application.command.CreateUserCommand HTTP/1.1
+GET {{baseUrl}}/api/statistics/avg-time/dev.marcotondi.application.CreateUserCommand HTTP/1.1
 
 ### Get Average Time for UpdateUserCommand
-GET {{baseUrl}}/api/statistics/avg-time/dev.marcotondi.application.command.UpdateUserCommand HTTP/1.1
+GET {{baseUrl}}/api/statistics/avg-time/dev.marcotondi.application.UpdateUserCommand HTTP/1.1
 
 ### Get Average Time for DeleteUserCommand
-GET {{baseUrl}}/api/statistics/avg-time/dev.marcotondi.application.command.DeleteUserCommand HTTP/1.1
+GET {{baseUrl}}/api/statistics/avg-time/dev.marcotondi.application.DeleteUserCommand HTTP/1.1
