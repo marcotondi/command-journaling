@@ -29,7 +29,7 @@ public class CommandResource {
     @Path("/users/create")
     public Response createUser(@Valid CreateUserRequest request) {
         var command = new CreateUserCommand(request.actor(), request.username(), request.email());
-        dispatcher.dispatch(command);
+        dispatcher.dispatchAsync(command);
         // Return 202 Accepted to indicate the command has been accepted for processing.
         // The location header can point to a resource to check the command's status.
         return Response.accepted()
@@ -44,7 +44,7 @@ public class CommandResource {
     @Path("/users/delete")
     public Response deleteUser(@Valid DeleteUserRequest request) {
         var command = new DeleteUserCommand(request.actor(), request.email());
-        dispatcher.dispatch(command);
+        dispatcher.dispatchAsync(command);
         // Return 202 Accepted to indicate the command has been accepted for processing.
         // The location header can point to a resource to check the command's status.
         return Response.accepted()

@@ -47,7 +47,7 @@ public class CommandCompositeResource {
             commands
         );
 
-        dispatcher.dispatch(compositeCommand);
+        dispatcher.dispatchAsync(compositeCommand);
 
         return Response.accepted()
             .location(URI.create("/api/journal/" + compositeCommand.commandId()))

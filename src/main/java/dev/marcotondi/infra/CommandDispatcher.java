@@ -2,6 +2,7 @@ package dev.marcotondi.infra;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.concurrent.CompletableFuture;
 
 import org.jboss.logging.Logger;
 
@@ -36,6 +37,10 @@ public class CommandDispatcher {
 
     @Inject
     ObjectMapper objectMapper;
+
+    public <R> CompletableFuture<R> dispatchAsync(Command<R> command) {
+        return CompletableFuture.supplyAsync(() -> dispatch(command));
+    }
 
     public <R> R dispatch(Command<R> command) {
         JournalEntry entry = createJournalEntry(command, CommandStatus.PENDING);
