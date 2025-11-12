@@ -1,8 +1,12 @@
-package dev.marcotondi.domain.entry;
+package dev.marcotondi.domain.entity;
 
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import dev.marcotondi.domain.api.CommandDescriptor;
 import io.quarkus.mongodb.panache.PanacheMongoEntity;
 import io.quarkus.mongodb.panache.common.MongoEntity;
 
@@ -12,7 +16,7 @@ public class JournalEntry extends PanacheMongoEntity {
     private String commandId;
     private String commandType;
     private String actor;
-    private String commandPayload;
+    private String commandPayload; // Added field for serialized payload
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private String status;
@@ -23,37 +27,46 @@ public class JournalEntry extends PanacheMongoEntity {
     private String sessionId;
     private Map<String, String> metadata;
 
-    public JournalEntry() { }
+    public JournalEntry() {
+    }
 
     public JournalEntry(
-                String commandId, 
-                String commandType, 
-                String actor, 
-                String commandPayload,
-                LocalDateTime startTime, 
-                LocalDateTime endTime, 
-                String status, 
-                String result, 
-                String errorDetails,
-                Long executionTimeMs, 
-                String sourceIp, 
-                String sessionId, 
-                Map<String, String> metadata
-    ) {
+            String commandId,
+            String commandType,
+            String actor,
+            String commandPayload,
+            LocalDateTime startTime,
+            String status) {
         this.commandId = commandId;
         this.commandType = commandType;
         this.actor = actor;
         this.commandPayload = commandPayload;
         this.startTime = startTime;
-        this.endTime = endTime;
         this.status = status;
-        this.result = result;
-        this.errorDetails = errorDetails;
-        this.executionTimeMs = executionTimeMs;
-        this.sourceIp = sourceIp;
-        this.sessionId = sessionId;
-        this.metadata = metadata;
     }
+
+    // This constructor is now mainly for reference, the logic will be in the service
+    public JournalEntry(
+            String commandId,
+            String commandType,
+            String actor,
+            CommandDescriptor<?> commandPayload,
+            ObjectMapper objectMapper,
+            LocalDateTime startTime,
+            String status) {
+        this.commandId = commandId;
+        this.commandType = commandType;
+        this.actor = actor;
+        try {
+            this.commandPayload = objectMapper.writeValueAsString(commandPayload);
+        } catch (JsonProcessingException e) {
+            // In a real app, you'd want more robust error handling
+            this.commandPayload = "{\"error\":\"Failed to serialize command payload\"}";
+        }
+        this.startTime = startTime;
+        this.status = status;
+    }
+
 
     public String getCommandId() {
         return this.commandId;
@@ -80,7 +93,7 @@ public class JournalEntry extends PanacheMongoEntity {
     }
 
     public String getCommandPayload() {
-        return this.commandPayload;
+        return commandPayload;
     }
 
     public void setCommandPayload(String commandPayload) {

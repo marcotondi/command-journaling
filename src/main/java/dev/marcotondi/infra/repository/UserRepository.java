@@ -1,10 +1,10 @@
 package dev.marcotondi.infra.repository;
 
-import dev.marcotondi.application.model.User;
+import java.util.Optional;
+
+import dev.marcotondi.application.entity.User;
 import io.quarkus.mongodb.panache.PanacheMongoRepository;
 import jakarta.enterprise.context.ApplicationScoped;
-
-import java.util.Optional;
 
 @ApplicationScoped
 public class UserRepository implements PanacheMongoRepository<User> {

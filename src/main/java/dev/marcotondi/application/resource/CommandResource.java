@@ -1,10 +1,10 @@
-package dev.marcotondi.api;
+package dev.marcotondi.application.resource;
 
 import java.net.URI;
 
-import dev.marcotondi.application.CreateUserCommand;
-import dev.marcotondi.application.DeleteUserCommand;
-import dev.marcotondi.infra.CommandDispatcher;
+import dev.marcotondi.application.model.CreateUserDescriptor;
+import dev.marcotondi.application.model.DeleteUserDescriptor;
+import dev.marcotondi.infra.CommandManager;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
@@ -20,7 +20,7 @@ import jakarta.ws.rs.core.Response;
 public class CommandResource {
 
     @Inject
-    CommandDispatcher dispatcher;
+    CommandManager dispatcher;
 
     // Record for the request payload
     public record CreateUserRequest(String username, String email, String actor) {}
@@ -28,12 +28,12 @@ public class CommandResource {
     @POST
     @Path("/users/create")
     public Response createUser(@Valid CreateUserRequest request) {
-        var command = new CreateUserCommand(request.actor(), request.username(), request.email());
-        dispatcher.dispatchAsync(command);
+        var descriptor = new CreateUserDescriptor(request.actor(), request.username(), request.email());
+        dispatcher.dispatch(descriptor);
         // Return 202 Accepted to indicate the command has been accepted for processing.
         // The location header can point to a resource to check the command's status.
         return Response.accepted()
-            .location(URI.create("/api/journal/" + command.commandId()))
+            .location(URI.create("/api/journal/" + descriptor.commandId()))
             .build();
     }
 
@@ -43,12 +43,12 @@ public class CommandResource {
     @POST
     @Path("/users/delete")
     public Response deleteUser(@Valid DeleteUserRequest request) {
-        var command = new DeleteUserCommand(request.actor(), request.email());
-        dispatcher.dispatchAsync(command);
+        var descriptor = new DeleteUserDescriptor(request.actor(), request.email());
+        dispatcher.dispatchAsync(descriptor);
         // Return 202 Accepted to indicate the command has been accepted for processing.
         // The location header can point to a resource to check the command's status.
         return Response.accepted()
-            .location(URI.create("/api/journal/" + command.commandId()))
+            .location(URI.create("/api/journal/" + descriptor.commandId()))
             .build();
     }
 

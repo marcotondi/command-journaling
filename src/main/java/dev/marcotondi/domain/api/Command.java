@@ -1,6 +1,4 @@
-package dev.marcotondi.domain.handler;
-
-import dev.marcotondi.domain.model.Command;
+package dev.marcotondi.domain.api;
 
 /**
  * Defines a handler for a specific type of command.
@@ -9,15 +7,23 @@ import dev.marcotondi.domain.model.Command;
  * @param <R> The result type of the command execution.
  * @param <T> The command type this handler can process.
  */
-public interface CommandHandler<R, T extends Command<R>> {
+public interface Command<R, T extends CommandDescriptor<R>> {
 
     /**
-     * Handles the command execution.
+     * Execute the command run.
+     *
+     * @param command The command to execute.
+     * @return The result of the execution.
+     */
+    R execute(T command);
+
+    /**
+     * Undo the command execution.
      *
      * @param command The command to handle.
      * @return The result of the execution.
      */
-    R handle(T command);
+    R undo(T command);
 
     /**
      * Returns the class of the command this handler is responsible for.

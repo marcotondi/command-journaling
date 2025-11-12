@@ -1,27 +1,27 @@
-package dev.marcotondi.application;
+package dev.marcotondi.application.model;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 
-import dev.marcotondi.domain.model.Command;
+import dev.marcotondi.domain.api.CommandDescriptor;
 
 /**
  * A command to create a new user.
  * This is an immutable data record.
  */
-public record CreateUserCommand(
+public record CreateUserDescriptor(
         UUID commandId,
         LocalDateTime timestamp,
         String actor,
         String commandType,
         String username,
-        String email) implements Command<String> {
+        String email) implements CommandDescriptor<String> {
 
     // Costruttore per deserializzazione JSON
     @JsonCreator
-    public CreateUserCommand(
+    public CreateUserDescriptor(
             UUID commandId,
             LocalDateTime timestamp,
             String actor,
@@ -36,7 +36,7 @@ public record CreateUserCommand(
         this.email = email;
     }
 
-    public CreateUserCommand(String actor, String username, String email) {
-        this(UUID.randomUUID(), LocalDateTime.now(), actor, CreateUserCommand.class.getName(), username, email);
+    public CreateUserDescriptor(String actor, String username, String email) {
+        this(UUID.randomUUID(), LocalDateTime.now(), actor, CreateUserDescriptor.class.getName(), username, email);
     }
 }

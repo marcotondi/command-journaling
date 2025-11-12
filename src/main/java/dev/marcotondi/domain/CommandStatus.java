@@ -1,4 +1,4 @@
-package dev.marcotondi.domain.model;
+package dev.marcotondi.domain;
 
 public enum CommandStatus {
     PENDING, EXECUTING, COMPLETED, FAILED, ROLLED_BACK

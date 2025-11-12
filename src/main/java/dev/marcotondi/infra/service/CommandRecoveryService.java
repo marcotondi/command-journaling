@@ -1,4 +1,4 @@
-package dev.marcotondi.service;
+package dev.marcotondi.infra.service;
 
 import java.util.List;
 
@@ -6,9 +6,9 @@ import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.marcotondi.domain.entry.JournalEntry;
-import dev.marcotondi.domain.model.Command;
-import dev.marcotondi.infra.CommandDispatcher;
+import dev.marcotondi.domain.api.CommandDescriptor;
+import dev.marcotondi.domain.entity.JournalEntry;
+import dev.marcotondi.infra.CommandManager;
 import dev.marcotondi.infra.repository.JournalRepository;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.annotation.Priority;
@@ -25,7 +25,7 @@ public class CommandRecoveryService {
     JournalRepository journalRepository;
 
     @Inject
-    CommandDispatcher dispatcher;
+    CommandManager dispatcher;
 
     @Inject
     ObjectMapper objectMapper;
@@ -51,7 +51,7 @@ public class CommandRecoveryService {
         for (JournalEntry entry : interrupted) {
             try {
                 LOG.infof("Attempting to recover command ID: %s (%s)", entry.getCommandId(), entry.getCommandType());
-                Command<?> command = reconstructCommand(entry);
+                CommandDescriptor<?> command = reconstructCommand(entry);
                 dispatcher.dispatch(command, entry);
                 LOG.infof("Successfully recovered command ID: %s", entry.getCommandId());
             } catch (Exception e) {
@@ -61,10 +61,19 @@ public class CommandRecoveryService {
         }
     }
 
-    private Command<?> reconstructCommand(JournalEntry entry) throws Exception {
+    private CommandDescriptor<?> reconstructCommand(JournalEntry entry) throws Exception {
+        String type = entry.getCommandType();
+        String payload = entry.getCommandPayload();
+
+        if (payload == null || payload.isBlank()) {
+            throw new IllegalStateException("Command payload is missing from journal entry: " + entry.getCommandId());
+        }
+
         // The commandType in the journal now holds the fully qualified class name,
         // making reconstruction reliable.
-        Class<?> commandClass = Class.forName(entry.getCommandType());
-        return (Command<?>) objectMapper.readValue(entry.getCommandPayload(), commandClass);
+        Class<?> commandClass = Class.forName(type);
+        Object commandDescriptor = objectMapper.readValue(payload, commandClass);
+        
+        return (CommandDescriptor<?>) commandDescriptor;
     }
 }

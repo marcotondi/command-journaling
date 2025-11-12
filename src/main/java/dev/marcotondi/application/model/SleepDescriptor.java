@@ -1,26 +1,26 @@
-package dev.marcotondi.application;
+package dev.marcotondi.application.model;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 
-import dev.marcotondi.domain.model.Command;
+import dev.marcotondi.domain.api.CommandDescriptor;
 
 /**
  * A command to create a new user.
  * This is an immutable data record.
  */
-public record SleepCommand(
+public record SleepDescriptor(
         UUID commandId,
         LocalDateTime timestamp,
         String actor,
         String commandType,
-        int seconds) implements Command<String> {
+        int seconds) implements CommandDescriptor<String> {
 
     // Costruttore per deserializzazione JSON
     @JsonCreator
-    public SleepCommand(
+    public SleepDescriptor(
             UUID commandId,
             LocalDateTime timestamp,
             String actor,
@@ -33,7 +33,7 @@ public record SleepCommand(
         this.seconds = seconds;
     }
 
-    public SleepCommand(String actor, int seconds) {
-        this(UUID.randomUUID(), LocalDateTime.now(), actor, SleepCommand.class.getName(), seconds);
+    public SleepDescriptor(String actor, int seconds) {
+        this(UUID.randomUUID(), LocalDateTime.now(), actor, SleepDescriptor.class.getName(), seconds);
     }
 }

@@ -1,9 +1,9 @@
-package dev.marcotondi.api;
+package dev.marcotondi.application.resource;
 
 import java.util.List;
 
-import dev.marcotondi.domain.entry.JournalEntry;
-import dev.marcotondi.service.JournalService;
+import dev.marcotondi.domain.entity.JournalEntry;
+import dev.marcotondi.infra.JournalService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;

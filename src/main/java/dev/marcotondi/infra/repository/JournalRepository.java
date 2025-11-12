@@ -11,8 +11,8 @@ import org.bson.Document;
 import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoCollection;
 
-import dev.marcotondi.domain.entry.JournalEntry;
-import dev.marcotondi.domain.model.CommandStatus;
+import dev.marcotondi.domain.CommandStatus;
+import dev.marcotondi.domain.entity.JournalEntry;
 import io.quarkus.mongodb.panache.PanacheMongoRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 

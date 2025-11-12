@@ -1,4 +1,4 @@
-package dev.marcotondi.domain.model;
+package dev.marcotondi.domain.api;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -9,7 +9,7 @@ import java.util.UUID;
  *
  * @param <R> The type of the result produced by the command's execution.
  */
-public interface Command<R> {
+public interface CommandDescriptor<R> {
 
     UUID commandId();
 

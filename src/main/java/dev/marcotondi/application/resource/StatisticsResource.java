@@ -1,9 +1,9 @@
-package dev.marcotondi.api;
+package dev.marcotondi.application.resource;
 
 import java.time.LocalDateTime;
 import java.util.Map;
 
-import dev.marcotondi.service.StatisticsService;
+import dev.marcotondi.infra.service.StatisticsService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
