@@ -15,5 +15,15 @@ public interface CommandDescriptor {
 
     String actor();
 
-    String commandType();
+    /**
+     * Returns the stable, logical type of the command.
+     * @return The {@link CommandTypeName} enum.
+     */
+    CommandTypeName commandType();
+
+    /**
+     * Returns the data payload of the command.
+     * @return The {@link Payload} DTO.
+     */
+    Payload getPayload();
 }

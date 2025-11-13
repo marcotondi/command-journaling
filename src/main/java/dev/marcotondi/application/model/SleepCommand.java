@@ -30,17 +30,17 @@ public class SleepCommand implements Command<String>, Initializable<SleepDescrip
     @Override
     @Transactional
     public String execute() {
-        LOG.infof("Executing SleepCommand for second: %s", descriptor.seconds());
+        LOG.infof("Executing SleepCommand for second: %s", descriptor.payload().seconds());
 
         try {
-            Thread.sleep(descriptor.seconds() * 1000L);
+            Thread.sleep(descriptor.payload().seconds() * 1000L);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             LOG.error("Sleep was interrupted", e);
             return "Sleep was interrupted.";
         }
 
-        return "Sleep of " + descriptor.seconds() + " seconds completed.";
+        return "Sleep of " + descriptor.payload().seconds() + " seconds completed.";
     }
 
     @Override

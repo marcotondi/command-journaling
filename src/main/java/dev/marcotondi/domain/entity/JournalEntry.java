@@ -5,12 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.bson.codecs.pojo.annotations.BsonId;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import dev.marcotondi.domain.api.CommandDescriptor;
+import dev.marcotondi.domain.api.CommandTypeName;
 import io.quarkus.mongodb.panache.PanacheMongoEntity;
 import io.quarkus.mongodb.panache.common.MongoEntity;
 
@@ -18,9 +13,10 @@ import io.quarkus.mongodb.panache.common.MongoEntity;
 public class JournalEntry extends PanacheMongoEntity {
 
     public String commandId;
-    public String commandType;
+    public CommandTypeName commandType;
+    public int payloadVersion;
     public String actor;
-    public String commandPayload;
+    public String payload;
     public String status;
 
     public String parentCommandId;
@@ -42,37 +38,17 @@ public class JournalEntry extends PanacheMongoEntity {
 
     public JournalEntry(
             String commandId,
-            String commandType,
+            CommandTypeName commandType,
+            int payloadVersion,
             String actor,
-            String commandPayload,
+            String payload,
             LocalDateTime startTime,
             String status) {
         this.commandId = commandId;
         this.commandType = commandType;
+        this.payloadVersion = payloadVersion;
         this.actor = actor;
-        this.commandPayload = commandPayload;
-        this.startTime = startTime;
-        this.status = status;
-    }
-
-    // This constructor is now mainly for reference, the logic will be in the service
-    public JournalEntry(
-            String commandId,
-            String commandType,
-            String actor,
-            CommandDescriptor commandPayload,
-            ObjectMapper objectMapper,
-            LocalDateTime startTime,
-            String status) {
-        this.commandId = commandId;
-        this.commandType = commandType;
-        this.actor = actor;
-        try {
-            this.commandPayload = objectMapper.writeValueAsString(commandPayload);
-        } catch (JsonProcessingException e) {
-            // In a real app, you'd want more robust error handling
-            this.commandPayload = "{\"error\":\"Failed to serialize command payload\"}";
-        }
+        this.payload = payload;
         this.startTime = startTime;
         this.status = status;
     }

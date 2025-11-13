@@ -33,14 +33,15 @@ public class DeleteUserCommand implements Command<String>, Initializable<DeleteU
     @Override
     @Transactional
     public String execute() {
-        LOG.infof("Executing DeleteUserCommand for email: %s", descriptor.email());
+        var email = descriptor.payload().email();
+        LOG.infof("Executing DeleteUserCommand for email: %s", email);
 
-        return userRepository.findByEmail(descriptor.email())
+        return userRepository.findByEmail(email)
                 .map(user -> {
                     userRepository.delete(user);
-                    return "User '" + descriptor.email() + "' deleted successfully with ID: " + user.id;
+                    return "User '" + email + "' deleted successfully with ID: " + user.id;
                 })
-                .orElse("User with email '" + descriptor.email() + "' not found.");
+                .orElse("User with email '" + email + "' not found.");
     }
 
     @Override

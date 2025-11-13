@@ -1,13 +1,17 @@
 package dev.marcotondi.infra.service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.marcotondi.application.recovery.CommandReconstructor;
 import dev.marcotondi.domain.api.Command;
 import dev.marcotondi.domain.api.CommandDescriptor;
+import dev.marcotondi.domain.api.CommandTypeName;
 import dev.marcotondi.domain.entity.JournalEntry;
 import dev.marcotondi.infra.CommandFactory;
 import dev.marcotondi.infra.CommandManager;
@@ -16,6 +20,7 @@ import io.quarkus.runtime.StartupEvent;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
@@ -23,27 +28,36 @@ public class CommandRecoveryService {
 
     private static final Logger LOG = Logger.getLogger(CommandRecoveryService.class);
 
-    @Inject
-    JournalRepository journalRepository;
+    private final JournalRepository journalRepository;
+    private final CommandManager dispatcher;
+    private final CommandFactory commandFactory;
+    private final ObjectMapper objectMapper;
+    private final Map<CommandTypeName, CommandReconstructor> reconstructors;
 
     @Inject
-    CommandManager dispatcher;
+    public CommandRecoveryService(
+            JournalRepository journalRepository,
+            CommandManager dispatcher,
+            CommandFactory commandFactory,
+            ObjectMapper objectMapper,
+            Instance<CommandReconstructor> reconstructorInstances) {
+        this.journalRepository = journalRepository;
+        this.dispatcher = dispatcher;
+        this.commandFactory = commandFactory;
+        this.objectMapper = objectMapper;
 
-    @Inject
-    CommandFactory commandFactory;
-
-    @Inject
-    ObjectMapper objectMapper;
+        this.reconstructors = new HashMap<>();
+        for (CommandReconstructor reconstructor : reconstructorInstances) {
+            reconstructors.put(reconstructor.supportedType(), reconstructor);
+        }
+        LOG.infof("Loaded %d command reconstructors.", this.reconstructors.size());
+    }
 
     void onStart(@Observes @Priority(Integer.MAX_VALUE) StartupEvent ev) {
         LOG.info("Starting recovery of interrupted commands...");
         recoverInterruptedCommands();
     }
 
-    /**
-     * Recovers commands that were interrupted (e.g., due to an application crash).
-     * It finds commands in PENDING or EXECUTING state and attempts to re-process them.
-     */
     public void recoverInterruptedCommands() {
         List<JournalEntry> interrupted = journalRepository.findInterruptedCommands();
         if (interrupted.isEmpty()) {
@@ -57,40 +71,25 @@ public class CommandRecoveryService {
             try {
                 LOG.infof("Attempting to recover command ID: %s (%s)", entry.commandId, entry.commandType);
 
-                // Step 1: Reconstruct the descriptor from the journal
                 CommandDescriptor descriptor = reconstructCommand(entry);
-
-                // Step 2: Create the executable Command object from the descriptor
                 Command<?> command = commandFactory.buildCommand(descriptor);
-
-                // Step 3: Dispatch the executable command for re-processing
                 dispatcher.dispatch(command, entry);
 
                 LOG.infof("Successfully recovered command ID: %s", entry.commandId);
             } catch (Exception e) {
                 LOG.errorf(e, "Failed to recover command %s. Manual intervention may be required.", entry.commandId);
-                // Optionally, update the journal entry to a specific RECOVERY_FAILED status
             }
         }
     }
 
     private CommandDescriptor reconstructCommand(JournalEntry entry) throws Exception {
-        // This method assumes the 'commandType' field in the journal stores the
-        // fully qualified class name of the CommandDescriptor.
-        String descriptorClassName = entry.commandId;
-        String payload = entry.commandPayload;
-
-        if (payload == null || payload.isBlank()) {
-            throw new IllegalStateException("Command payload is missing from journal entry: " + entry.commandId);
+        CommandReconstructor reconstructor = reconstructors.get(entry.commandType);
+        if (reconstructor == null) {
+            // This can happen for CompositeCommands or other types that don't have a reconstructor.
+            // This is not necessarily an error, as their recovery might follow a different path.
+            throw new IllegalStateException("No reconstructor found for command type: " + entry.commandType);
         }
-
-        if (descriptorClassName == null || descriptorClassName.isBlank()) {
-            throw new IllegalStateException("Command descriptor class name is missing from journal entry: " + entry.commandId);
-        }
-
-        Class<?> commandClass = Class.forName(descriptorClassName);
-        Object commandDescriptor = objectMapper.readValue(payload, commandClass);
-
-        return (CommandDescriptor) commandDescriptor;
+        // Delegate the actual reconstruction to the application-specific component
+        return reconstructor.reconstruct(entry, objectMapper);
     }
 }

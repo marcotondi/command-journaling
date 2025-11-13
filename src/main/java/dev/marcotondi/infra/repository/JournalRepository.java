@@ -12,6 +12,7 @@ import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoCollection;
 
 import dev.marcotondi.domain.CommandStatus;
+import dev.marcotondi.domain.api.CommandTypeName;
 import dev.marcotondi.domain.entity.JournalEntry;
 import io.quarkus.mongodb.panache.PanacheMongoRepository;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -23,7 +24,7 @@ public class JournalRepository implements PanacheMongoRepository<JournalEntry> {
         return find("commandId", commandId).firstResult();
     }
 
-    public List<JournalEntry> findByCommandType(String commandType) {
+    public List<JournalEntry> findByCommandType(CommandTypeName commandType) {
         return find("commandType", commandType).list();
     }
 
@@ -72,11 +73,11 @@ public class JournalRepository implements PanacheMongoRepository<JournalEntry> {
         return mongoDatabase().getCollection("command_journal");
     }
 
-    public Double getAverageExecutionTime(String commandType) {
+    public Double getAverageExecutionTime(CommandTypeName commandType) {
         MongoCollection<Document> collection = getMongoCollection();
 
         List<Document> pipeline = Arrays.asList(
-                new Document("$match", new Document("commandType", commandType).append("status", "COMPLETED")),
+                new Document("", new Document("commandType", commandType.name()).append("status", "COMPLETED")),
                 new Document("$group", new Document("_id", null).append("avgExecutionTime",
                         new Document("$avg", "$executionTimeMs"))));
 
@@ -85,9 +86,8 @@ public class JournalRepository implements PanacheMongoRepository<JournalEntry> {
         Document res = result.first();
         if (res != null && res.getDouble("avgExecutionTime") != null) {
             return res.getDouble("avgExecutionTime");
-        } else {
-            return 0.0;
         }
+        return 0.0;
     }
 
 }

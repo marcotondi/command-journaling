@@ -6,37 +6,43 @@ import java.util.UUID;
 
 import dev.marcotondi.domain.api.Command;
 import dev.marcotondi.domain.api.CommandDescriptor;
+import dev.marcotondi.domain.api.CommandTypeName;
+import dev.marcotondi.domain.api.Payload;
 
 public record CompositeCommandDescriptor(
         UUID commandId,
         LocalDateTime timestamp,
         String actor,
-        String commandType,
-        List<CommandDescriptor> childCommands
-) implements CommandDescriptor {
+        List<CommandDescriptor> childCommands) implements CommandDescriptor {
 
-    // Constructor che genera automaticamente l'ID se non fornito
+    // Convenience constructor
     public CompositeCommandDescriptor(
-            LocalDateTime timestamp,
             String actor,
-            String commandType,
             List<CommandDescriptor> childCommands) {
-        this(UUID.randomUUID(), timestamp, actor, commandType, childCommands);
+        this(UUID.randomUUID(), LocalDateTime.now(), actor, childCommands);
+    }
+
+    @Override
+    public CommandTypeName commandType() {
+        return CommandTypeName.COMPOSITE_COMMAND;
+    }
+
+    @Override
+    public Payload getPayload() {
+        // A composite command's payload is represented by its children,
+        // which are journaled individually. It has no intrinsic payload itself.
+        return null;
     }
 
     // Metodo helper per creare un descrittore da una lista di comandi
     public static CompositeCommandDescriptor fromCommands(
             String actor,
-            String commandType,
             List<? extends Command<?>> commands) {
         List<CommandDescriptor> childDescriptors = commands.stream()
-            .map(Command::getDescriptor)
-            .toList();
+                .map(Command::getDescriptor)
+                .toList();
         return new CompositeCommandDescriptor(
-            LocalDateTime.now(),
-            actor,
-            commandType,
-            childDescriptors
-        );
+                actor,
+                childDescriptors);
     }
 }

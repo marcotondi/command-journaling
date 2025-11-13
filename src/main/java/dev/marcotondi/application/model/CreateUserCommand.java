@@ -34,18 +34,21 @@ public class CreateUserCommand implements Command<String>, Initializable<CreateU
     @Override
     @Transactional
     public String execute() {
+        var username = descriptor.payload().username();
+        var email = descriptor.payload().email();
+
         // Idempotency Check: See if a user with this email already exists.
-        if (userRepository.findByEmail(descriptor.email()).isPresent()) {
-            LOG.warnf("Attempted to create a user with an existing email: %s. Skipping.", descriptor.email());
-            return "User with email '" + descriptor.email() + "' already exists.";
+        if (userRepository.findByEmail(email).isPresent()) {
+            LOG.warnf("Attempted to create a user with an existing email: %s. Skipping.", email);
+            return "User with email '" + email + "' already exists.";
         }
 
-        LOG.infof("Executing CreateUserCommand for user: %s", descriptor.username());
+        LOG.infof("Executing CreateUserCommand for user: %s", username);
 
-        var user = new User(descriptor.username(), descriptor.email());
+        var user = new User(username, email);
         userRepository.persist(user);
 
-        String result = "User '" + descriptor.username() + "' created successfully with ID: " + user.id;
+        String result = "User '" + username + "' created successfully with ID: " + user.id;
         return result;
     }
 

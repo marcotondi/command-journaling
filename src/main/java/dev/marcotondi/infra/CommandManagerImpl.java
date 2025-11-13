@@ -17,7 +17,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.enterprise.inject.Any;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 
 @ApplicationScoped
 public class CommandManagerImpl implements CommandManager {
@@ -85,7 +84,7 @@ public class CommandManagerImpl implements CommandManager {
             commandEventPublisher.fireAsync(
                     new CommandExecutedEvent(
                             descriptor.commandId().toString(),
-                            descriptor.commandType(),
+                            descriptor.commandType().name(),
                             result));
 
             return result;

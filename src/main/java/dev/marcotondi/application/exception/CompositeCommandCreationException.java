@@ -19,4 +19,12 @@ public class CompositeCommandCreationException extends RuntimeException {
         this.commandType = commandType;
         this.payload = payload;
     }
+
+    public String getCommandType() {
+        return commandType;
+    }
+
+    public Map<String, Object> getPayload() {
+        return payload;
+    }
 }

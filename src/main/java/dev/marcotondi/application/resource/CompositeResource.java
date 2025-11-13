@@ -1,11 +1,9 @@
 package dev.marcotondi.application.resource;
 
 import java.net.URI;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import org.jboss.logging.Logger;
 
@@ -83,10 +81,7 @@ public class CompositeResource {
         }
 
         CompositeCommandDescriptor compositeDescriptor = new CompositeCommandDescriptor(
-                UUID.randomUUID(),
-                LocalDateTime.now(),
                 request.actor,
-                "CompositeCommand",
                 childDescriptors);
 
         compositeCommand.withDescriptor(compositeDescriptor);

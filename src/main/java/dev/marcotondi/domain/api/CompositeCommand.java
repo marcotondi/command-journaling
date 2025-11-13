@@ -1,9 +1,7 @@
 package dev.marcotondi.domain.api;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import org.jboss.logging.Logger;
 
@@ -57,10 +55,7 @@ public class CompositeCommand implements Command<Void> {
                     .toList();
 
             descriptor = new CompositeCommandDescriptor(
-                    UUID.randomUUID(),
-                    LocalDateTime.now(),
                     "system",
-                    "CompositeCommand",
                     childDescriptors);
         }
         return descriptor;

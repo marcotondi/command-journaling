@@ -3,37 +3,36 @@ package dev.marcotondi.application.model;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-
+import dev.marcotondi.application.payload.SleepPayloadV1;
 import dev.marcotondi.domain.api.CommandDescriptor;
+import dev.marcotondi.domain.api.CommandTypeName;
+import dev.marcotondi.domain.api.Payload;
 
 /**
- * A command to create a new user.
- * This is an immutable data record.
+ * A command to pause execution for a number of seconds.
+ * This is an immutable data record that holds metadata and a payload.
  */
 public record SleepDescriptor(
         UUID commandId,
         LocalDateTime timestamp,
         String actor,
-        String commandType,
-        int seconds) implements CommandDescriptor {
+        SleepPayloadV1 payload) implements CommandDescriptor {
 
-    // Costruttore per deserializzazione JSON
-    @JsonCreator
-    public SleepDescriptor(
-            UUID commandId,
-            LocalDateTime timestamp,
-            String actor,
-            String commandType,
-            int seconds) {
-        this.commandId = commandId;
-        this.timestamp = timestamp;
-        this.actor = actor;
-        this.commandType = commandType;
-        this.seconds = seconds;
+    // Convenience constructor for creating a new command descriptor from scratch.
+    public SleepDescriptor(String actor, int seconds) {
+            this(UUID.randomUUID(),
+                LocalDateTime.now(),
+                actor,
+                new SleepPayloadV1(seconds));
     }
 
-    public SleepDescriptor(String actor, int seconds) {
-        this(UUID.randomUUID(), LocalDateTime.now(), actor, "Sleep", seconds);
+    @Override
+    public CommandTypeName commandType() {
+        return CommandTypeName.SLEEP;
+    }
+
+    @Override
+    public Payload getPayload() {
+        return this.payload;
     }
 }

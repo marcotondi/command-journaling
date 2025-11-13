@@ -8,8 +8,11 @@ import org.jboss.logging.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.marcotondi.application.payload.PayloadMapper;
 import dev.marcotondi.domain.CommandStatus;
 import dev.marcotondi.domain.api.CommandDescriptor;
+import dev.marcotondi.domain.api.CommandTypeName;
+import dev.marcotondi.domain.api.Payload;
 import dev.marcotondi.domain.entity.JournalEntry;
 import dev.marcotondi.infra.JournalService;
 import dev.marcotondi.infra.repository.JournalRepository;
@@ -27,26 +30,36 @@ public class JournalServiceImpl implements JournalService {
     @Inject
     ObjectMapper objectMapper;
 
+    @Inject
+    PayloadMapper payloadMapper;
+
     @Override
     public JournalEntry createJournalEntry(CommandDescriptor descriptor, CommandStatus status) {
-        String payload;
+        // 1. Get payload DTO from descriptor
+        Payload payloadDto = payloadMapper.toPayload(descriptor);
+
+        // 2. Serialize DTO to JSON string
+        String payloadJson;
         try {
-            payload = objectMapper.writeValueAsString(descriptor);
+            // payloadDto can be null for commands without a payload (like CompositeCommand)
+            payloadJson = payloadDto != null ? objectMapper.writeValueAsString(payloadDto) : null;
         } catch (JsonProcessingException e) {
             LOG.errorf(e, "Could not serialize command payload for command ID %s", descriptor.commandId());
-            // In a real-world scenario, you might want to rethrow a custom exception
-            payload = "{\"error\":\"Payload serialization failed\"}";
+            // Fail fast if serialization fails, as recovery would be impossible.
+            throw new RuntimeException("Payload serialization failed for command ID " + descriptor.commandId(), e);
         }
 
-        // Store the fully qualified class name of the descriptor in the commandType field.
-        // This is crucial for the recovery service to be able to reconstruct the descriptor.
-        String descriptorClassName = descriptor.getClass().getName();
+        // 3. Get CommandTypeName from descriptor and set version
+        CommandTypeName typeName = descriptor.commandType();
+        int payloadVersion = 1; // For now, all payloads are version 1
 
+        // 4. Create and persist the JournalEntry
         JournalEntry entry = new JournalEntry(
                 descriptor.commandId().toString(),
-                descriptorClassName,
+                typeName,
+                payloadVersion,
                 descriptor.actor(),
-                payload,
+                payloadJson,
                 LocalDateTime.now(),
                 status.name());
 

@@ -43,7 +43,7 @@ public class CommandFactory {
     }
 
     public <R> Command<R> buildCommand(CommandDescriptor descriptor) {
-        String commandType = descriptor.commandType();
+        String commandType = descriptor.commandType().name();
         Class<? extends Command<?>> commandClass = commandClassMap.get(commandType);
         if (commandClass == null) {
             throw new IllegalStateException("No provider found for command type: " + commandType);
