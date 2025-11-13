@@ -19,12 +19,12 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class JournalRepository implements PanacheMongoRepository<JournalEntry> {
 
-    public List<JournalEntry> findByCommandType(String commandType) {
-        return find("commandType", commandType).list();
+    public JournalEntry findByCommandId(String commandId) {
+        return find("commandId", commandId).firstResult();
     }
 
-    public List<JournalEntry> findByCommandId(String commandId) {
-        return find("commandId", commandId).list();
+    public List<JournalEntry> findByCommandType(String commandType) {
+        return find("commandType", commandType).list();
     }
 
     public List<JournalEntry> findFailedCommands() {
@@ -39,6 +39,18 @@ public class JournalRepository implements PanacheMongoRepository<JournalEntry> {
         return find("status IN ?1",
                 Arrays.asList(CommandStatus.PENDING.name(), CommandStatus.EXECUTING.name()))
                 .list();
+    }
+
+    public List<JournalEntry> findChildEntries(String parentCommandId) {
+        return list("parentCommandId", parentCommandId);
+    }
+
+    public JournalEntry findParentEntry(String childCommandId) {
+        JournalEntry child = find("commandId", childCommandId).firstResult();
+        if (child != null && child.parentCommandId != null) {
+            return find("commandId", child.parentCommandId).firstResult();
+        }
+        return null;
     }
 
     public Map<String, Integer> getCommandStatistics(LocalDateTime from, LocalDateTime to) {
@@ -77,4 +89,5 @@ public class JournalRepository implements PanacheMongoRepository<JournalEntry> {
             return 0.0;
         }
     }
+
 }

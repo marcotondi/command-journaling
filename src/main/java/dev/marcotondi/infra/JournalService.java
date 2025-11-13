@@ -8,15 +8,23 @@ import dev.marcotondi.domain.entity.JournalEntry;
 
 public interface JournalService {
 
-    public List<JournalEntry> getAllEntries();
+    JournalEntry createJournalEntry(CommandDescriptor descriptor, CommandStatus status);
 
-    public List<JournalEntry> getEntriesByCommandId(String commandId);
+    void linkChildToParent(JournalEntry child, JournalEntry parent);
 
-    public JournalEntry createJournalEntry(CommandDescriptor<?> command, CommandStatus status);
+    void updateJournalStatus(JournalEntry entry, CommandStatus status);
 
-    public void updateJournalStatus(JournalEntry entry, CommandStatus status);
+    <R> void updateJournalOnSuccess(JournalEntry entry, R result, long durationMs);
 
-    public <R> void updateJournalOnSuccess(JournalEntry entry, R result, long duration);
+    void updateJournalOnFailure(JournalEntry entry, Exception e);
 
-    public void updateJournalOnFailure(JournalEntry entry, Exception e);
+    List<JournalEntry> getAllEntries();
+
+    JournalEntry getEntriesByCommandId(String commandId);
+
+    List<JournalEntry> getChildEntries(String parentCommandId);
+
+    JournalEntry getParentEntry(String childCommandId);
+
+
 }

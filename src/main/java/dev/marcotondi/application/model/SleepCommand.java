@@ -3,22 +3,33 @@ package dev.marcotondi.application.model;
 import org.jboss.logging.Logger;
 
 import dev.marcotondi.domain.api.Command;
-import dev.marcotondi.infra.repository.UserRepository;
+import dev.marcotondi.domain.api.CommandDescriptor;
+import dev.marcotondi.domain.api.CommandType;
+import dev.marcotondi.domain.api.Initializable;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
+@CommandType("Sleep")
 @ApplicationScoped
-public class SleepCommand implements Command<String, SleepDescriptor> {
+public class SleepCommand implements Command<String>, Initializable<SleepDescriptor> {
 
     private static final Logger LOG = Logger.getLogger(SleepCommand.class);
 
-    @Inject
-    UserRepository userRepository;
+    private SleepDescriptor descriptor;
+
+    @Override
+    public void init(SleepDescriptor descriptor) {
+        this.descriptor = descriptor;
+    }
+
+    @Override
+    public CommandDescriptor getDescriptor() {
+        return this.descriptor;
+    }
 
     @Override
     @Transactional
-    public String execute(SleepDescriptor descriptor) {
+    public String execute() {
         LOG.infof("Executing SleepCommand for second: %s", descriptor.seconds());
 
         try {
@@ -33,14 +44,9 @@ public class SleepCommand implements Command<String, SleepDescriptor> {
     }
 
     @Override
-    public String undo(SleepDescriptor descriptor) {
+    public String undo() {
         LOG.infof("SleepCommand cannot be undone.");
         return "SleepCommand cannot be undone.";
-    }
-
-    @Override
-    public Class<SleepDescriptor> getCommandType() {
-        return SleepDescriptor.class;
     }
 
 }

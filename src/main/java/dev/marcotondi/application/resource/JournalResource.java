@@ -27,7 +27,7 @@ public class JournalResource {
 
     @GET
     @Path("/{commandId}")
-    public List<JournalEntry> getEntriesByCommandId(@PathParam("commandId") String commandId) {
+    public JournalEntry getEntriesByCommandId(@PathParam("commandId") String commandId) {
         return journalService.getEntriesByCommandId(commandId);
     }
 }

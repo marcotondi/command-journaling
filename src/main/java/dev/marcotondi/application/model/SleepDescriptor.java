@@ -16,7 +16,7 @@ public record SleepDescriptor(
         LocalDateTime timestamp,
         String actor,
         String commandType,
-        int seconds) implements CommandDescriptor<String> {
+        int seconds) implements CommandDescriptor {
 
     // Costruttore per deserializzazione JSON
     @JsonCreator
@@ -34,6 +34,6 @@ public record SleepDescriptor(
     }
 
     public SleepDescriptor(String actor, int seconds) {
-        this(UUID.randomUUID(), LocalDateTime.now(), actor, SleepDescriptor.class.getName(), seconds);
+        this(UUID.randomUUID(), LocalDateTime.now(), actor, "Sleep", seconds);
     }
 }

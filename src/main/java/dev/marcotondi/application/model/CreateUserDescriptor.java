@@ -17,7 +17,7 @@ public record CreateUserDescriptor(
         String actor,
         String commandType,
         String username,
-        String email) implements CommandDescriptor<String> {
+        String email) implements CommandDescriptor {
 
     // Costruttore per deserializzazione JSON
     @JsonCreator
@@ -37,6 +37,6 @@ public record CreateUserDescriptor(
     }
 
     public CreateUserDescriptor(String actor, String username, String email) {
-        this(UUID.randomUUID(), LocalDateTime.now(), actor, CreateUserDescriptor.class.getName(), username, email);
+        this(UUID.randomUUID(), LocalDateTime.now(), actor, "CreateUser", username, email);
     }
 }

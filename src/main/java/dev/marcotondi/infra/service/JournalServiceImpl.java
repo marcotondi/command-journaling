@@ -22,72 +22,124 @@ public class JournalServiceImpl implements JournalService {
     private static final Logger LOG = Logger.getLogger(JournalServiceImpl.class);
 
     @Inject
-    JournalRepository journalRepository;
+    JournalRepository repository;
 
     @Inject
     ObjectMapper objectMapper;
 
     @Override
-    public List<JournalEntry> getAllEntries() {
-        return journalRepository.listAll();
-    }
-
-    @Override
-    public List<JournalEntry> getEntriesByCommandId(String commandId) {
-        return journalRepository.findByCommandId(commandId);
-    }
-
-    @Override
-    public JournalEntry createJournalEntry(CommandDescriptor<?> command, CommandStatus status) {
+    public JournalEntry createJournalEntry(CommandDescriptor descriptor, CommandStatus status) {
         String payload;
         try {
-            payload = objectMapper.writeValueAsString(command);
+            payload = objectMapper.writeValueAsString(descriptor);
         } catch (JsonProcessingException e) {
-            LOG.errorf(e, "Could not serialize command payload for command ID %s", command.commandId());
+            LOG.errorf(e, "Could not serialize command payload for command ID %s", descriptor.commandId());
             // In a real-world scenario, you might want to rethrow a custom exception
             payload = "{\"error\":\"Payload serialization failed\"}";
         }
 
+        // Store the fully qualified class name of the descriptor in the commandType field.
+        // This is crucial for the recovery service to be able to reconstruct the descriptor.
+        String descriptorClassName = descriptor.getClass().getName();
+
         JournalEntry entry = new JournalEntry(
-                                command.commandId().toString(),
-                                command.commandType(),
-                                command.actor(),
-                                payload,
-                                LocalDateTime.now(),
-                                status.name());
+                descriptor.commandId().toString(),
+                descriptorClassName,
+                descriptor.actor(),
+                payload,
+                LocalDateTime.now(),
+                status.name());
 
-
-        journalRepository.persist(entry);
-
+        repository.persist(entry);
         return entry;
     }
 
     @Override
-    public void updateJournalStatus(JournalEntry entry, CommandStatus status) {
-        entry.setStatus(status.name());
-        journalRepository.update(entry);
+    public void linkChildToParent(JournalEntry child, JournalEntry parent) {
+        child.parentCommandId = parent.commandId;
+
+        repository.update(child);
+
+        // Aggiorna anche il parent
+        if (!parent.childCommandIds.contains(child.commandId)) {
+            parent.childCommandIds.add(child.commandId);
+            repository.update(parent);
+        }
     }
 
     @Override
-    public <R> void updateJournalOnSuccess(JournalEntry entry, R result, long duration) {
-        entry.setEndTime(LocalDateTime.now());
-        entry.setStatus(CommandStatus.COMPLETED.name());
-        entry.setExecutionTimeMs(duration);
+    public void updateJournalStatus(JournalEntry entry, CommandStatus status) {
+        entry.status = status.name();
+        repository.update(entry);
+    }
+
+    @Override
+    public <R> void updateJournalOnSuccess(
+            JournalEntry entry,
+            R result,
+            long durationMs) {
+
+        entry.endTime = LocalDateTime.now();
+        entry.status = CommandStatus.COMPLETED.name();
+        entry.executionTimeMs = durationMs;
+
         try {
-            String json = objectMapper.writeValueAsString(result);
-            entry.setResult(json);
+            entry.result = objectMapper.writeValueAsString(result);
         } catch (JsonProcessingException e) {
-            LOG.errorf(e, "Error serializing result for command ID %s", entry.getCommandId());
-            entry.setResult("{\"error\": \"Result serialization failed\"}");
+            LOG.errorf(e, "Error serializing result for command ID %s", entry.commandId);
+            entry.result = "{\"error\": \"Result serialization failed\"}";
         }
-        journalRepository.update(entry);
+        repository.update(entry);
+
+        // If it is a composite, also update the status of the children
+        if (entry.isComposite()) {
+            updateChildrenStatus(entry.commandId, CommandStatus.COMPLETED);
+        }
     }
 
     @Override
     public void updateJournalOnFailure(JournalEntry entry, Exception e) {
-        entry.setEndTime(LocalDateTime.now());
-        entry.setStatus(CommandStatus.FAILED.name());
-        entry.setErrorDetails(e.getClass().getName() + ": " + e.getMessage());
-        journalRepository.update(entry);
+        entry.status = CommandStatus.FAILED.name();
+        entry.endTime = LocalDateTime.now();
+        entry.errorMessage = e.getMessage();
+
+        repository.update(entry);
+
+        // If it is a composite, mark the children as rolled back
+        if (entry.isComposite()) {
+            updateChildrenStatus(entry.commandId, CommandStatus.ROLLED_BACK);
+        }
+    }
+
+    private void updateChildrenStatus(String parentCommandId, CommandStatus status) {
+        List<JournalEntry> children = getChildEntries(parentCommandId);
+        for (JournalEntry child : children) {
+            updateJournalStatus(child, status);
+            if (child.isComposite()) {
+                updateChildrenStatus(child.commandId, status);
+            }
+        }
+    }
+
+    @Override
+    public List<JournalEntry> getAllEntries() {
+        return repository.listAll();
+    }
+
+    @Override
+    public JournalEntry getEntriesByCommandId(String commandId) {
+        return repository.findByCommandId(commandId);
+    }
+
+    @Override
+    public List<JournalEntry> getChildEntries(String parentCommandId) {
+        // Delega la query al repository
+        return repository.findChildEntries(parentCommandId);
+    }
+
+    @Override
+    public JournalEntry getParentEntry(String childCommandId) {
+        // Delega la query al repository
+        return repository.findParentEntry(childCommandId);
     }
 }

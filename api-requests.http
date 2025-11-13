@@ -1,7 +1,7 @@
 ### Variables
 @baseUrl = http://localhost:8080
 @contentType = application/json
-@actor = test-user
+@actor = user
 @commandId = 8b48bfce-6f22-454d-aa2d-28d4c2712371
 
 ###############################################

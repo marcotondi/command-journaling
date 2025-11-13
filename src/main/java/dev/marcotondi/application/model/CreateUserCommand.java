@@ -4,22 +4,36 @@ import org.jboss.logging.Logger;
 
 import dev.marcotondi.application.entity.User;
 import dev.marcotondi.domain.api.Command;
+import dev.marcotondi.domain.api.CommandType;
+import dev.marcotondi.domain.api.Initializable;
 import dev.marcotondi.infra.repository.UserRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
+@CommandType("CreateUser")
 @ApplicationScoped
-public class CreateUserCommand implements Command<String, CreateUserDescriptor> {
-
+public class CreateUserCommand implements Command<String>, Initializable<CreateUserDescriptor> {
     private static final Logger LOG = Logger.getLogger(CreateUserCommand.class);
 
     @Inject
-    UserRepository userRepository;
+    private UserRepository userRepository;
+
+    private CreateUserDescriptor descriptor;
+
+    @Override
+    public void init(CreateUserDescriptor descriptor) {
+        this.descriptor = descriptor;
+    }
+
+    @Override
+    public CreateUserDescriptor getDescriptor() {
+        return this.descriptor;
+    }
 
     @Override
     @Transactional
-    public String execute(CreateUserDescriptor descriptor) {
+    public String execute() {
         // Idempotency Check: See if a user with this email already exists.
         if (userRepository.findByEmail(descriptor.email()).isPresent()) {
             LOG.warnf("Attempted to create a user with an existing email: %s. Skipping.", descriptor.email());
@@ -36,14 +50,9 @@ public class CreateUserCommand implements Command<String, CreateUserDescriptor> 
     }
 
     @Override
-    public String undo(CreateUserDescriptor command) {
+    public String undo() {
         LOG.info("Undo operation is not supported for CreateUserDescriptor.");
         return "Undo operation is not supported for CreateUserDescriptor.";
-    }
-
-    @Override
-    public Class<CreateUserDescriptor> getCommandType() {
-        return CreateUserDescriptor.class;
     }
 
 }

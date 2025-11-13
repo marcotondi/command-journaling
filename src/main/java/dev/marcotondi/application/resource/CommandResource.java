@@ -4,6 +4,8 @@ import java.net.URI;
 
 import dev.marcotondi.application.model.CreateUserDescriptor;
 import dev.marcotondi.application.model.DeleteUserDescriptor;
+import dev.marcotondi.domain.api.Command;
+import dev.marcotondi.infra.CommandFactory;
 import dev.marcotondi.infra.CommandManager;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -20,7 +22,10 @@ import jakarta.ws.rs.core.Response;
 public class CommandResource {
 
     @Inject
-    CommandManager dispatcher;
+    CommandManager manager;
+
+    @Inject
+    CommandFactory commandFactory;
 
     // Record for the request payload
     public record CreateUserRequest(String username, String email, String actor) {}
@@ -29,7 +34,12 @@ public class CommandResource {
     @Path("/users/create")
     public Response createUser(@Valid CreateUserRequest request) {
         var descriptor = new CreateUserDescriptor(request.actor(), request.username(), request.email());
-        dispatcher.dispatch(descriptor);
+
+        // Create the Command object using the factory
+        // Assuming CreateUserCommand implements Command<User> and Initializable<CreateUserDescriptor>
+        Command<?> createUserCommand = commandFactory.buildCommand(descriptor);
+
+        manager.dispatch(createUserCommand);
         // Return 202 Accepted to indicate the command has been accepted for processing.
         // The location header can point to a resource to check the command's status.
         return Response.accepted()
@@ -44,7 +54,12 @@ public class CommandResource {
     @Path("/users/delete")
     public Response deleteUser(@Valid DeleteUserRequest request) {
         var descriptor = new DeleteUserDescriptor(request.actor(), request.email());
-        dispatcher.dispatchAsync(descriptor);
+
+        // Create the Command object using the factory
+        // Assuming DeleteUserCommand implements Command<Void> and Initializable<DeleteUserDescriptor>
+        Command<?> deleteUserCommand = commandFactory.buildCommand(descriptor);
+
+        manager.dispatchAsync(deleteUserCommand);
         // Return 202 Accepted to indicate the command has been accepted for processing.
         // The location header can point to a resource to check the command's status.
         return Response.accepted()

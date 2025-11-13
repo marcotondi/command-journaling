@@ -16,7 +16,7 @@ public record DeleteUserDescriptor(
         LocalDateTime timestamp,
         String actor,
         String commandType,
-        String email) implements CommandDescriptor<String> {
+        String email) implements CommandDescriptor {
 
     // Costruttore per deserializzazione JSON
     @JsonCreator
@@ -34,6 +34,6 @@ public record DeleteUserDescriptor(
     }
 
     public DeleteUserDescriptor(String actor, String email) {
-        this(UUID.randomUUID(), LocalDateTime.now(), actor, DeleteUserDescriptor.class.getName(), email);
+        this(UUID.randomUUID(), LocalDateTime.now(), actor, "DeleteUser", email);
     }
 }

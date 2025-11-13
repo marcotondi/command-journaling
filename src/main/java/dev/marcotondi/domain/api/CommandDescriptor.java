@@ -6,10 +6,8 @@ import java.util.UUID;
 /**
  * Base interface for all commands.
  * A command is an immutable data structure that represents a request to perform an action.
- *
- * @param <R> The type of the result produced by the command's execution.
  */
-public interface CommandDescriptor<R> {
+public interface CommandDescriptor {
 
     UUID commandId();
 

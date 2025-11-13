@@ -6,8 +6,10 @@ import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.marcotondi.domain.api.Command;
 import dev.marcotondi.domain.api.CommandDescriptor;
 import dev.marcotondi.domain.entity.JournalEntry;
+import dev.marcotondi.infra.CommandFactory;
 import dev.marcotondi.infra.CommandManager;
 import dev.marcotondi.infra.repository.JournalRepository;
 import io.quarkus.runtime.StartupEvent;
@@ -26,6 +28,9 @@ public class CommandRecoveryService {
 
     @Inject
     CommandManager dispatcher;
+
+    @Inject
+    CommandFactory commandFactory;
 
     @Inject
     ObjectMapper objectMapper;
@@ -50,30 +55,42 @@ public class CommandRecoveryService {
 
         for (JournalEntry entry : interrupted) {
             try {
-                LOG.infof("Attempting to recover command ID: %s (%s)", entry.getCommandId(), entry.getCommandType());
-                CommandDescriptor<?> command = reconstructCommand(entry);
+                LOG.infof("Attempting to recover command ID: %s (%s)", entry.commandId, entry.commandType);
+
+                // Step 1: Reconstruct the descriptor from the journal
+                CommandDescriptor descriptor = reconstructCommand(entry);
+
+                // Step 2: Create the executable Command object from the descriptor
+                Command<?> command = commandFactory.buildCommand(descriptor);
+
+                // Step 3: Dispatch the executable command for re-processing
                 dispatcher.dispatch(command, entry);
-                LOG.infof("Successfully recovered command ID: %s", entry.getCommandId());
+
+                LOG.infof("Successfully recovered command ID: %s", entry.commandId);
             } catch (Exception e) {
-                LOG.errorf(e, "Failed to recover command %s. Manual intervention may be required.", entry.getCommandId());
+                LOG.errorf(e, "Failed to recover command %s. Manual intervention may be required.", entry.commandId);
                 // Optionally, update the journal entry to a specific RECOVERY_FAILED status
             }
         }
     }
 
-    private CommandDescriptor<?> reconstructCommand(JournalEntry entry) throws Exception {
-        String type = entry.getCommandType();
-        String payload = entry.getCommandPayload();
+    private CommandDescriptor reconstructCommand(JournalEntry entry) throws Exception {
+        // This method assumes the 'commandType' field in the journal stores the
+        // fully qualified class name of the CommandDescriptor.
+        String descriptorClassName = entry.commandId;
+        String payload = entry.commandPayload;
 
         if (payload == null || payload.isBlank()) {
-            throw new IllegalStateException("Command payload is missing from journal entry: " + entry.getCommandId());
+            throw new IllegalStateException("Command payload is missing from journal entry: " + entry.commandId);
         }
 
-        // The commandType in the journal now holds the fully qualified class name,
-        // making reconstruction reliable.
-        Class<?> commandClass = Class.forName(type);
+        if (descriptorClassName == null || descriptorClassName.isBlank()) {
+            throw new IllegalStateException("Command descriptor class name is missing from journal entry: " + entry.commandId);
+        }
+
+        Class<?> commandClass = Class.forName(descriptorClassName);
         Object commandDescriptor = objectMapper.readValue(payload, commandClass);
-        
-        return (CommandDescriptor<?>) commandDescriptor;
+
+        return (CommandDescriptor) commandDescriptor;
     }
 }
