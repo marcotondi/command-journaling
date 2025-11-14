@@ -20,7 +20,9 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     @Override
     public Map<String, Integer> getCommandStatistics(LocalDateTime fromDate, LocalDateTime toDate) {
-        List<JournalEntry> entries = journalRepository.find("startTime BETWEEN ?1 and ?2", fromDate, toDate).list();
+        List<JournalEntry> entries = journalRepository
+            .find("startTime >= ?1 and startTime <= ?2", fromDate, toDate)
+            .list();
 
         return entries.stream()
                 .collect(Collectors.groupingBy(
