@@ -6,12 +6,12 @@ import java.util.List;
 import org.jboss.logging.Logger;
 
 import dev.marcotondi.composite.model.CompositeCommandDescriptor;
-import dev.marcotondi.core.domain.Command;
-import dev.marcotondi.core.domain.CommandDescriptor;
+import dev.marcotondi.core.api.Command;
+import dev.marcotondi.core.api.CommandDescriptor;
 import dev.marcotondi.core.domain.exception.CommandExecutionException;
 import dev.marcotondi.core.infra.CommandManager;
 import dev.marcotondi.journal.domain.JournalEntry;
-import dev.marcotondi.journal.infra.JournalService;
+import dev.marcotondi.journal.infra.api.JournalService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;

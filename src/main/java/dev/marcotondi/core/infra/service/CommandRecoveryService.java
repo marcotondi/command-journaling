@@ -8,15 +8,16 @@ import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.marcotondi.core.domain.Command;
-import dev.marcotondi.core.domain.CommandDescriptor;
-import dev.marcotondi.core.domain.CommandReconstructor;
-import dev.marcotondi.core.domain.CommandTypeName;
+import dev.marcotondi.core.api.Command;
+import dev.marcotondi.core.api.CommandDescriptor;
+import dev.marcotondi.core.api.CommandReconstructor;
+import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.core.infra.CommandFactory;
 import dev.marcotondi.core.infra.CommandManager;
 import dev.marcotondi.journal.domain.JournalEntry;
 import dev.marcotondi.journal.infra.repository.JournalRepository;
 import io.quarkus.runtime.StartupEvent;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -25,27 +26,23 @@ import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class CommandRecoveryService {
-
     private static final Logger LOG = Logger.getLogger(CommandRecoveryService.class);
 
-    private final JournalRepository journalRepository;
-    private final CommandManager dispatcher;
-    private final CommandFactory commandFactory;
-    private final ObjectMapper objectMapper;
-    private final Map<CommandTypeName, CommandReconstructor> reconstructors;
-
     @Inject
-    public CommandRecoveryService(
-            JournalRepository journalRepository,
-            CommandManager dispatcher,
-            CommandFactory commandFactory,
-            ObjectMapper objectMapper,
-            Instance<CommandReconstructor> reconstructorInstances) {
-        this.journalRepository = journalRepository;
-        this.dispatcher = dispatcher;
-        this.commandFactory = commandFactory;
-        this.objectMapper = objectMapper;
+    private JournalRepository journalRepository;
+    @Inject
+    private CommandManager dispatcher;
+    @Inject
+    private CommandFactory commandFactory;
+    @Inject
+    private ObjectMapper objectMapper;
+    @Inject
+    private Instance<CommandReconstructor> reconstructorInstances;
 
+    private Map<CommandTypeName, CommandReconstructor> reconstructors;
+
+    @PostConstruct
+    public void init( ) {
         this.reconstructors = new HashMap<>();
         for (CommandReconstructor reconstructor : reconstructorInstances) {
             reconstructors.put(reconstructor.supportedType(), reconstructor);

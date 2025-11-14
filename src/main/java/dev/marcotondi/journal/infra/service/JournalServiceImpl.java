@@ -8,13 +8,13 @@ import org.jboss.logging.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.marcotondi.core.domain.CommandDescriptor;
-import dev.marcotondi.core.domain.CommandStatus;
-import dev.marcotondi.core.domain.CommandTypeName;
-import dev.marcotondi.core.domain.Payload;
+import dev.marcotondi.core.api.CommandDescriptor;
+import dev.marcotondi.core.api.CommandStatus;
+import dev.marcotondi.core.api.CommandTypeName;
+import dev.marcotondi.core.api.Payload;
 import dev.marcotondi.core.payload.PayloadMapper;
 import dev.marcotondi.journal.domain.JournalEntry;
-import dev.marcotondi.journal.infra.JournalService;
+import dev.marcotondi.journal.infra.api.JournalService;
 import dev.marcotondi.journal.infra.repository.JournalRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;

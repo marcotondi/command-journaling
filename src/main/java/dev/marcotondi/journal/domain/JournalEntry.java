@@ -5,11 +5,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import dev.marcotondi.core.domain.CommandTypeName;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import dev.marcotondi.core.api.CommandTypeName;
 import io.quarkus.mongodb.panache.PanacheMongoEntity;
 import io.quarkus.mongodb.panache.common.MongoEntity;
 
 @MongoEntity(collection = "command_journal")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class JournalEntry extends PanacheMongoEntity {
 
     public String commandId;

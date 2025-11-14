@@ -4,10 +4,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import dev.marcotondi.core.domain.Command;
-import dev.marcotondi.core.domain.CommandDescriptor;
-import dev.marcotondi.core.domain.CommandTypeName;
-import dev.marcotondi.core.domain.Payload;
+import dev.marcotondi.core.api.Command;
+import dev.marcotondi.core.api.CommandDescriptor;
+import dev.marcotondi.core.api.CommandTypeName;
+import dev.marcotondi.core.api.Payload;
 
 public record CompositeCommandDescriptor(
         UUID commandId,

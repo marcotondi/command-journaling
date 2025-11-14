@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import dev.marcotondi.core.domain.CommandTypeName;
+import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.journal.domain.JournalEntry;
 import dev.marcotondi.journal.infra.repository.JournalRepository;
 import jakarta.enterprise.context.ApplicationScoped;

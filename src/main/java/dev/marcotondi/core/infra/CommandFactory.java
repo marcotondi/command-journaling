@@ -5,10 +5,10 @@ import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 
-import dev.marcotondi.core.domain.Command;
-import dev.marcotondi.core.domain.CommandDescriptor;
-import dev.marcotondi.core.domain.CommandType;
-import dev.marcotondi.core.domain.Initializable;
+import dev.marcotondi.core.api.Command;
+import dev.marcotondi.core.api.CommandDescriptor;
+import dev.marcotondi.core.api.CommandType;
+import dev.marcotondi.core.api.Initializable;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;

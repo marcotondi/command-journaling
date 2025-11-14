@@ -1,7 +1,8 @@
 package dev.marcotondi.core.infra;
 
 import java.util.concurrent.CompletableFuture;
-import dev.marcotondi.core.domain.Command;
+
+import dev.marcotondi.core.api.Command;
 import dev.marcotondi.journal.domain.JournalEntry;
 
 public interface CommandManager {

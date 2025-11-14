@@ -45,17 +45,17 @@ Content-Type: application/json
 {
   "actor": "admin",
   "commands": [
+  {
+    "type": "Sleep",
+    "payload": {
+      "seconds": 10
+      }
+    },
     {
       "type": "CreateUser",
       "payload": {
         "username": "john.doe",
         "email": "john.doe@example.com"
-      }
-    },
-    {
-      "type": "Sleep",
-      "payload": {
-        "seconds": 30
       }
     },
     {

@@ -1,7 +1,7 @@
 package dev.marcotondi.core.payload;
 
-import dev.marcotondi.core.domain.CommandDescriptor;
-import dev.marcotondi.core.domain.Payload;
+import dev.marcotondi.core.api.CommandDescriptor;
+import dev.marcotondi.core.api.Payload;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
