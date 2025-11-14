@@ -1,4 +1,4 @@
-package dev.marcotondi.core.infra.service;
+package dev.marcotondi.core.service;
 
 import java.util.HashMap;
 import java.util.List;
@@ -12,10 +12,8 @@ import dev.marcotondi.core.api.Command;
 import dev.marcotondi.core.api.CommandDescriptor;
 import dev.marcotondi.core.api.CommandReconstructor;
 import dev.marcotondi.core.api.CommandTypeName;
-import dev.marcotondi.core.infra.CommandFactory;
-import dev.marcotondi.core.infra.CommandManager;
 import dev.marcotondi.journal.domain.JournalEntry;
-import dev.marcotondi.journal.infra.repository.JournalRepository;
+import dev.marcotondi.journal.repository.JournalRepository;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Priority;

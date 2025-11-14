@@ -1,4 +1,4 @@
-package dev.marcotondi.core.infra;
+package dev.marcotondi.core.service;
 
 import org.jboss.logging.Logger;
 

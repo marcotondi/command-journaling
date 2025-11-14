@@ -1,4 +1,4 @@
-package dev.marcotondi.journal.infra.service;
+package dev.marcotondi.journal.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -12,10 +12,10 @@ import dev.marcotondi.core.api.CommandDescriptor;
 import dev.marcotondi.core.api.CommandStatus;
 import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.core.api.Payload;
-import dev.marcotondi.core.payload.PayloadMapper;
+import dev.marcotondi.core.domain.PayloadMapper;
+import dev.marcotondi.journal.api.JournalService;
 import dev.marcotondi.journal.domain.JournalEntry;
-import dev.marcotondi.journal.infra.api.JournalService;
-import dev.marcotondi.journal.infra.repository.JournalRepository;
+import dev.marcotondi.journal.repository.JournalRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 

@@ -1,4 +1,4 @@
-package dev.marcotondi.journal.infra.repository;
+package dev.marcotondi.journal.repository;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;

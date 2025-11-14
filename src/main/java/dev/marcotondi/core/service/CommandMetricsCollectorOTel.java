@@ -1,4 +1,4 @@
-package dev.marcotondi.core.infra;
+package dev.marcotondi.core.service;
 
 import dev.marcotondi.core.domain.model.CommandExecutedEvent;
 import io.opentelemetry.api.GlobalOpenTelemetry;

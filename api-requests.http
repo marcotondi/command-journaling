@@ -48,7 +48,7 @@ Content-Type: application/json
   {
     "type": "Sleep",
     "payload": {
-      "seconds": 10
+      "seconds": 90
       }
     },
     {

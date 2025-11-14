@@ -1,4 +1,4 @@
-package dev.marcotondi.core.infra;
+package dev.marcotondi.core.service;
 
 import java.util.Map;
 import java.util.stream.Collectors;

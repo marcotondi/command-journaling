@@ -1,4 +1,4 @@
-package dev.marcotondi.core.infra.service;
+package dev.marcotondi.core.service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -12,9 +12,8 @@ import dev.marcotondi.core.api.CommandDescriptor;
 import dev.marcotondi.core.api.CommandStatus;
 import dev.marcotondi.core.domain.exception.CommandExecutionException;
 import dev.marcotondi.core.domain.model.CommandExecutedEvent;
-import dev.marcotondi.core.infra.CommandManager;
+import dev.marcotondi.journal.api.JournalService;
 import dev.marcotondi.journal.domain.JournalEntry;
-import dev.marcotondi.journal.infra.api.JournalService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.enterprise.inject.Any;

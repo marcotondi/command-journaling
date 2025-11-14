@@ -1,4 +1,4 @@
-package dev.marcotondi.journal.infra.service;
+package dev.marcotondi.journal.api;
 
 import java.time.LocalDateTime;
 import java.util.Map;

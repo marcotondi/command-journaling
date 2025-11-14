@@ -1,4 +1,4 @@
-package dev.marcotondi.journal.infra.api;
+package dev.marcotondi.journal.api;
 
 import java.util.List;
 

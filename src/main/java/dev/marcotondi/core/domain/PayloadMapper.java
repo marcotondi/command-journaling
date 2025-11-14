@@ -1,4 +1,4 @@
-package dev.marcotondi.core.payload;
+package dev.marcotondi.core.domain;
 
 import dev.marcotondi.core.api.CommandDescriptor;
 import dev.marcotondi.core.api.Payload;

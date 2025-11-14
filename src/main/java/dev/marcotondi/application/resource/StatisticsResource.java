@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 import dev.marcotondi.core.api.CommandTypeName;
-import dev.marcotondi.journal.infra.service.StatisticsService;
+import dev.marcotondi.journal.api.StatisticsService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
