@@ -19,7 +19,7 @@ public record SleepDescriptor(
 
     // Convenience constructor for creating a new command descriptor from scratch.
     public SleepDescriptor(String actor, int seconds) {
-            this(UUID.randomUUID(),
+        this(UUID.randomUUID(),
                 LocalDateTime.now(),
                 actor,
                 new SleepPayloadV1(seconds));

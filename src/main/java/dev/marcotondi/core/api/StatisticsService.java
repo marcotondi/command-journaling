@@ -1,9 +1,7 @@
-package dev.marcotondi.journal.api;
+package dev.marcotondi.core.api;
 
 import java.time.LocalDateTime;
 import java.util.Map;
-
-import dev.marcotondi.core.api.CommandTypeName;
 
 public interface StatisticsService {
     Map<String, Integer> getCommandStatistics(LocalDateTime fromDate, LocalDateTime toDate);

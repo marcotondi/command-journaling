@@ -34,4 +34,5 @@ public record DeleteUserDescriptor(
     public Payload getPayload() {
         return this.payload;
     }
+
 }

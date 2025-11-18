@@ -8,7 +8,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 public class PayloadMapper {
 
     public Payload toPayload(CommandDescriptor descriptor) {
-        // Assuming CommandDescriptor has a getPayload() method
         return descriptor.getPayload();
     }
 }

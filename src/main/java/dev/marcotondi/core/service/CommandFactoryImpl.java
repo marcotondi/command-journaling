@@ -1,14 +1,19 @@
 package dev.marcotondi.core.service;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 
-import dev.marcotondi.core.api.Command;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import dev.marcotondi.core.api.CommandDescriptor;
 import dev.marcotondi.core.api.CommandType;
-import dev.marcotondi.core.api.Initializable;
+import dev.marcotondi.core.api.CommandTypeName;
+import dev.marcotondi.core.api.ICommand;
+import dev.marcotondi.core.api.ICommandFactory;
+import dev.marcotondi.core.domain.Command;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -17,9 +22,8 @@ import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
-public class CommandFactory {
-
-    private static final Logger LOG = Logger.getLogger(CommandFactory.class);
+public class CommandFactoryImpl implements ICommandFactory {
+    private static final Logger LOG = Logger.getLogger(CommandFactoryImpl.class);
 
     @Inject
     Instance<Command<?>> commandPrototypes;
@@ -42,21 +46,42 @@ public class CommandFactory {
                 commandClassMap.keySet());
     }
 
-    public <R> Command<R> buildCommand(CommandDescriptor descriptor) {
-        String commandType = descriptor.commandType().name();
-        Class<? extends Command<?>> commandClass = commandClassMap.get(commandType);
+    @Override
+    public <R> ICommand<R> buildCommand(CommandDescriptor descriptor) {
+        Command<R> command = createCommandInstance(descriptor.commandType());
+        command.setDescriptor(descriptor);
+        return command;
+    }
+
+    @Override
+    public <R> ICommand<R> buildCommand(
+            CommandTypeName commandType,
+            String commandId,
+            int payloadVersion,
+            String actor,
+            String payload,
+            LocalDateTime startTime,
+            ObjectMapper objectMapper) {
+
+        Command<R> command = createCommandInstance(commandType);
+
+        command.descriptorFromJournal(
+                commandType, commandId, payloadVersion,
+                actor, payload, startTime, objectMapper);
+
+        return command;
+    }
+
+    private <R> Command<R> createCommandInstance(CommandTypeName commandType) {
+        String commandTypeName = commandType.name();
+        Class<? extends Command<?>> commandClass = commandClassMap.get(commandTypeName);
+
         if (commandClass == null) {
-            throw new IllegalStateException("No provider found for command type: " + commandType);
+            throw new IllegalStateException("No provider found for command type: " + commandTypeName);
         }
 
         Instance<?> provider = CDI.current().select(commandClass);
-        Command<R> command = (Command<R>) provider.get();
-
-        if (command instanceof Initializable c) {
-            c.init(descriptor);
-        }
-
-        return command;
+        return (Command<R>) provider.get();
     }
 
     private Class<?> getBeanClass(Object beanInstance) {
@@ -66,4 +91,5 @@ public class CommandFactory {
         }
         return beanClass;
     }
+
 }

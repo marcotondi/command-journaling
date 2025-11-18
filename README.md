@@ -9,7 +9,7 @@ Il codice sorgente è organizzato in package basati sui layer architetturali, pr
 
 - **`api`**: Contiene i controller REST (*Resource). Questo è il livello più esterno, che gestisce le richieste HTTP e funge da punto di ingresso all'applicazione.
 - **`application`**: Contiene la logica applicativa e i casi d'uso. La suddivisione in command e model è un'ottima pratica. Qui risiedono le azioni che l'applicazione può compiere.
-- **`domain`**: È il cuore dell'applicazione. Contiene le entità e le regole di business principali (Command, CommandHandler, JournalEntry). Questo package non dipende da nessun altro strato dell'applicazione, principio chiave delle architetture pulite.
+- **`domain`**: È il cuore dell'applicazione. Contiene le entità e le regole di business principali (Command, CommandHandler, JournalEntity). Questo package non dipende da nessun altro strato dell'applicazione, principio chiave delle architetture pulite.
 - **`infra`**: Contiene le implementazioni tecniche di interfacce definite nel dominio (come i Repository) e tutto ciò che riguarda l'infrastruttura (database, logging, metriche).
 - **`service`**: Contiene servizi che orchestrano operazioni, specialmente per le query (JournalService, StatisticsService), fungendo da ponte tra l'API e l'infrastruttura.
 

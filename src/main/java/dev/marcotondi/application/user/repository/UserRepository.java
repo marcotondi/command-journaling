@@ -1,4 +1,4 @@
-package dev.marcotondi.application.user.infra.repository;
+package dev.marcotondi.application.user.repository;
 
 import java.util.Optional;
 
