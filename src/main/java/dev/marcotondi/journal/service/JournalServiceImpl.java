@@ -2,14 +2,14 @@ package dev.marcotondi.journal.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.jboss.logging.Logger;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.marcotondi.core.CommandStatus;
 import dev.marcotondi.core.api.CommandDescriptor;
-import dev.marcotondi.core.api.CommandStatus;
 import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.core.api.Payload;
 import dev.marcotondi.core.domain.PayloadMapper;
@@ -33,31 +33,34 @@ public class JournalServiceImpl implements JournalService {
     @Inject
     PayloadMapper payloadMapper;
 
+    // ------------------------------------------------------------
+    // ENTRY CREATION
+    // ------------------------------------------------------------
+
     @Override
-    public JournalEntry createJournalEntry(CommandDescriptor descriptor, CommandStatus status) {
-        // 1. Get payload DTO from descriptor
-        Payload payloadDto = payloadMapper.toPayload(descriptor);
+    public JournalEntry getOrCreateEntry(
+            CommandDescriptor descriptor,
+            CommandStatus initialStatus) {
 
-        // 2. Serialize DTO to JSON string
-        String payloadJson;
-        try {
-            // payloadDto can be null for commands without a payload (like CompositeCommand)
-            payloadJson = payloadDto != null ? objectMapper.writeValueAsString(payloadDto) : null;
-        } catch (JsonProcessingException e) {
-            LOG.errorf(e, "Could not serialize command payload for command ID %s", descriptor.commandId());
-            // Fail fast if serialization fails, as recovery would be impossible.
-            throw new RuntimeException("Payload serialization failed for command ID " + descriptor.commandId(), e);
-        }
+        return findByCommandId(descriptor.commandId().toString())
+                .orElseGet(() -> createJournalEntry(descriptor, initialStatus));
+    }
 
-        // 3. Get CommandTypeName from descriptor and set version
+    @Override
+    public JournalEntry createJournalEntry(
+            CommandDescriptor descriptor,
+            CommandStatus status) {
+
+        String commandId = descriptor.commandId().toString();
         CommandTypeName typeName = descriptor.commandType();
-        int payloadVersion = 1; // For now, all payloads are version 1
+        int version = Payload.version;
 
-        // 4. Create and persist the JournalEntry
+        String payloadJson = serializePayload(descriptor, commandId);
+
         JournalEntry entry = new JournalEntry(
-                descriptor.commandId().toString(),
+                commandId,
                 typeName,
-                payloadVersion,
+                version,
                 descriptor.actor(),
                 payloadJson,
                 LocalDateTime.now(),
@@ -67,71 +70,70 @@ public class JournalServiceImpl implements JournalService {
         return entry;
     }
 
-    @Override
-    public void linkChildToParent(JournalEntry child, JournalEntry parent) {
-        child.parentCommandId = parent.commandId;
-
-        repository.update(child);
-
-        // Aggiorna anche il parent
-        if (!parent.childCommandIds.contains(child.commandId)) {
-            parent.childCommandIds.add(child.commandId);
-            repository.update(parent);
-        }
-    }
-
-    @Override
-    public void updateJournalStatus(JournalEntry entry, CommandStatus status) {
-        entry.status = status.name();
-        repository.update(entry);
-    }
+    // ------------------------------------------------------------
+    // STATE TRANSITION HELPERS
+    // ------------------------------------------------------------
 
     @Override
     public <R> void updateJournalOnSuccess(
             JournalEntry entry,
             R result,
             long durationMs) {
-
-        entry.endTime = LocalDateTime.now();
-        entry.status = CommandStatus.COMPLETED.name();
-        entry.executionTimeMs = durationMs;
-
-        try {
-            entry.result = objectMapper.writeValueAsString(result);
-        } catch (JsonProcessingException e) {
-            LOG.errorf(e, "Error serializing result for command ID %s", entry.commandId);
-            entry.result = "{\"error\": \"Result serialization failed\"}";
-        }
-        repository.update(entry);
-
-        // If it is a composite, also update the status of the children
-        if (entry.isComposite()) {
-            updateChildrenStatus(entry.commandId, CommandStatus.COMPLETED);
-        }
+        updateEntry(entry, CommandStatus.COMPLETED, durationMs, serializeResult(entry, result), null);
     }
 
     @Override
-    public void updateJournalOnFailure(JournalEntry entry, Exception e) {
-        entry.status = CommandStatus.FAILED.name();
-        entry.endTime = LocalDateTime.now();
-        entry.errorMessage = e.getMessage();
-
-        repository.update(entry);
-
-        // If it is a composite, mark the children as rolled back
-        if (entry.isComposite()) {
-            updateChildrenStatus(entry.commandId, CommandStatus.ROLLED_BACK);
-        }
+    public void updateJournalOnFailure(
+            JournalEntry entry,
+            Exception e) {
+        updateEntry(entry, CommandStatus.FAILED, null, null, e.getMessage());
     }
 
-    private void updateChildrenStatus(String parentCommandId, CommandStatus status) {
-        List<JournalEntry> children = getChildEntries(parentCommandId);
-        for (JournalEntry child : children) {
-            updateJournalStatus(child, status);
-            if (child.isComposite()) {
-                updateChildrenStatus(child.commandId, status);
-            }
+    @Override
+    public <R> void updateJournalOnRollBack(
+            JournalEntry entry,
+            R result,
+            long durationMs) {
+        updateEntry(entry, CommandStatus.ROLLED_BACK, durationMs, serializeResult(entry, result), null);
+    }
+
+    @Override
+    public void updateJournalStatus(
+            JournalEntry entry,
+            CommandStatus status) {
+        updateEntry(entry, status, null, null, null);
+    }
+
+    private void updateEntry(
+            JournalEntry entry,
+            CommandStatus status,
+            Long durationMs,
+            String result,
+            String errorMessage) {
+
+        entry.status = status.name();
+        entry.endTime = LocalDateTime.now();
+
+        if (durationMs != null) {
+            entry.executionTimeMs = durationMs;
         }
+        if (result != null) {
+            entry.result = result;
+        }
+        if (errorMessage != null) {
+            entry.errorMessage = errorMessage;
+        }
+
+        repository.update(entry);
+    }
+
+    // ------------------------------------------------------------
+    // QUERIES
+    // ------------------------------------------------------------
+
+    @Override
+    public Optional<JournalEntry> findByCommandId(String commandId) {
+        return repository.findByCommandId(commandId);
     }
 
     @Override
@@ -139,20 +141,26 @@ public class JournalServiceImpl implements JournalService {
         return repository.listAll();
     }
 
-    @Override
-    public JournalEntry getEntriesByCommandId(String commandId) {
-        return repository.findByCommandId(commandId);
+    // ------------------------------------------------------------
+    // INTERNAL UTILS
+    // ------------------------------------------------------------
+
+    private String serializePayload(CommandDescriptor descriptor, String commandId) {
+        try {
+            Payload dto = payloadMapper.toPayload(descriptor);
+            return dto != null ? objectMapper.writeValueAsString(dto) : null;
+        } catch (Exception e) {
+            LOG.errorf(e, "Payload serialization failed for command %s", commandId);
+            throw new RuntimeException("Cannot serialize payload for " + commandId, e);
+        }
     }
 
-    @Override
-    public List<JournalEntry> getChildEntries(String parentCommandId) {
-        // Delega la query al repository
-        return repository.findChildEntries(parentCommandId);
-    }
-
-    @Override
-    public JournalEntry getParentEntry(String childCommandId) {
-        // Delega la query al repository
-        return repository.findParentEntry(childCommandId);
+    private <R> String serializeResult(JournalEntry entry, R result) {
+        try {
+            return objectMapper.writeValueAsString(result);
+        } catch (Exception e) {
+            LOG.errorf(e, "Result serialization failed for command %s", entry.commandId);
+            return "{\"error\": \"result serialization failed\"}";
+        }
     }
 }

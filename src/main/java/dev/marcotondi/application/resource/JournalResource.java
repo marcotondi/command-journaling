@@ -11,6 +11,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 @Path("/api/journal")
 @Produces(MediaType.APPLICATION_JSON)
@@ -27,7 +28,12 @@ public class JournalResource {
 
     @GET
     @Path("/{commandId}")
-    public JournalEntry getEntriesByCommandId(@PathParam("commandId") String commandId) {
-        return journalService.getEntriesByCommandId(commandId);
+    public Response getEntryByCommandId(@PathParam("commandId") String commandId) {
+
+        return journalService.findByCommandId(commandId)
+                .map(entry -> Response.ok(entry).build())
+                .orElse(Response.status(Response.Status.NOT_FOUND)
+                        .entity("Journal entry not found for id: " + commandId)
+                        .build());
     }
 }

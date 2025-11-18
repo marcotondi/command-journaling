@@ -3,8 +3,8 @@ package dev.marcotondi.application.user.model;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import dev.marcotondi.core.api.CommandDescriptor;
 import dev.marcotondi.core.api.CommandTypeName;
+import dev.marcotondi.core.api.CommandDescriptor;
 import dev.marcotondi.core.api.Payload;
 
 /**
@@ -34,4 +34,5 @@ public record CreateUserDescriptor(
     public Payload getPayload() {
         return this.payload;
     }
+
 }

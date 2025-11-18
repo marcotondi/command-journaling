@@ -5,4 +5,6 @@ package dev.marcotondi.core.api;
  * This provides a common type for payload objects, improving type safety.
  * It belongs in the domain layer as it defines a role for command data.
  */
-public interface Payload {}
+public interface Payload {
+    int version = 1;
+}

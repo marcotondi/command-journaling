@@ -2,11 +2,12 @@ package dev.marcotondi.application.resource;
 
 import java.net.URI;
 
+import dev.marcotondi.application.sleep.model.SleepDescriptor;
 import dev.marcotondi.application.user.model.CreateUserDescriptor;
 import dev.marcotondi.application.user.model.DeleteUserDescriptor;
-import dev.marcotondi.core.api.Command;
-import dev.marcotondi.core.service.CommandFactory;
-import dev.marcotondi.core.service.CommandManager;
+import dev.marcotondi.core.api.ICommand;
+import dev.marcotondi.core.api.ICommandFactory;
+import dev.marcotondi.core.api.ICommandManager;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
@@ -22,10 +23,10 @@ import jakarta.ws.rs.core.Response;
 public class CommandResource {
 
     @Inject
-    CommandManager manager;
+    ICommandManager manager;
 
     @Inject
-    CommandFactory commandFactory;
+    ICommandFactory commandFactory;
 
     // Record for the request payload
     public record CreateUserRequest(String username, String email, String actor) {}
@@ -37,9 +38,9 @@ public class CommandResource {
 
         // Create the Command object using the factory
         // Assuming CreateUserCommand implements Command<User> and Initializable<CreateUserDescriptor>
-        Command<?> createUserCommand = commandFactory.buildCommand(descriptor);
+        ICommand<?> createUserCommand = commandFactory.buildCommand(descriptor);
 
-        manager.dispatch(createUserCommand);
+        manager.dispatchAsync(createUserCommand);
         // Return 202 Accepted to indicate the command has been accepted for processing.
         // The location header can point to a resource to check the command's status.
         return Response.accepted()
@@ -57,9 +58,29 @@ public class CommandResource {
 
         // Create the Command object using the factory
         // Assuming DeleteUserCommand implements Command<Void> and Initializable<DeleteUserDescriptor>
-        Command<?> deleteUserCommand = commandFactory.buildCommand(descriptor);
+        ICommand<?> deleteUserCommand = commandFactory.buildCommand(descriptor);
 
         manager.dispatchAsync(deleteUserCommand);
+        // Return 202 Accepted to indicate the command has been accepted for processing.
+        // The location header can point to a resource to check the command's status.
+        return Response.accepted()
+            .location(URI.create("/api/journal/" + descriptor.commandId()))
+            .build();
+    }
+
+    // Record for the request payload
+    public record SleepRequest(int seconds, String actor) {}
+
+    @POST
+    @Path("/sleep")
+    public Response deleteUser(@Valid SleepRequest request) {
+        var descriptor = new SleepDescriptor(request.actor(), request.seconds());
+
+        // Create the Command object using the factory
+        // Assuming DeleteUserCommand implements Command<Void> and Initializable<DeleteUserDescriptor>
+        ICommand<?> sleepCommand = commandFactory.buildCommand(descriptor);
+
+        manager.dispatchAsync(sleepCommand);
         // Return 202 Accepted to indicate the command has been accepted for processing.
         // The location header can point to a resource to check the command's status.
         return Response.accepted()

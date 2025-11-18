@@ -1,8 +1,6 @@
 package dev.marcotondi.journal.domain;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -21,9 +19,6 @@ public class JournalEntry extends PanacheMongoEntity {
     public String actor;
     public String payload;
     public String status;
-
-    public String parentCommandId;
-    public List<String> childCommandIds = new ArrayList<>();
 
     public LocalDateTime startTime;
     public LocalDateTime endTime;
@@ -54,16 +49,6 @@ public class JournalEntry extends PanacheMongoEntity {
         this.payload = payload;
         this.startTime = startTime;
         this.status = status;
-    }
-
-    // Metodo helper per verificare se è un composito
-    public boolean isComposite() {
-        return !childCommandIds.isEmpty();
-    }
-
-    // Metodo helper per verificare se è un comando figlio
-    public boolean isChild() {
-        return parentCommandId != null;
     }
 
 }

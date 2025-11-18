@@ -5,13 +5,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.bson.Document;
 
-import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoCollection;
 
-import dev.marcotondi.core.api.CommandStatus;
+import dev.marcotondi.core.CommandStatus;
 import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.journal.domain.JournalEntry;
 import io.quarkus.mongodb.panache.PanacheMongoRepository;
@@ -20,16 +20,22 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class JournalRepository implements PanacheMongoRepository<JournalEntry> {
 
-    public JournalEntry findByCommandId(String commandId) {
-        return find("commandId", commandId).firstResult();
+    // ------------------------------------------------------------
+    // Query by identifiers
+    // ------------------------------------------------------------
+    public Optional<JournalEntry> findByCommandId(String commandId) {
+        return find("commandId", commandId).firstResultOptional();
     }
 
+    // ------------------------------------------------------------
+    // Query by properties
+    // ------------------------------------------------------------
     public List<JournalEntry> findByCommandType(CommandTypeName commandType) {
-        return find("commandType", commandType).list();
+        return find("commandType", commandType.name()).list();
     }
 
     public List<JournalEntry> findFailedCommands() {
-        return find("status", CommandStatus.FAILED).list();
+        return find("status", CommandStatus.FAILED.name()).list();
     }
 
     public List<JournalEntry> findByActor(String actor) {
@@ -38,56 +44,50 @@ public class JournalRepository implements PanacheMongoRepository<JournalEntry> {
 
     public List<JournalEntry> findInterruptedCommands() {
         return find("status IN ?1",
-                Arrays.asList(CommandStatus.PENDING.name(), CommandStatus.EXECUTING.name()))
-                .list();
+                Arrays.asList(
+                        CommandStatus.PENDING.name(),
+                        CommandStatus.EXECUTING.name(),
+                        CommandStatus.EXECUTING_ROLL_BACK.name()
+                )).list();
     }
 
-    public List<JournalEntry> findChildEntries(String parentCommandId) {
-        return list("parentCommandId", parentCommandId);
-    }
-
-    public JournalEntry findParentEntry(String childCommandId) {
-        JournalEntry child = find("commandId", childCommandId).firstResult();
-        if (child != null && child.parentCommandId != null) {
-            return find("commandId", child.parentCommandId).firstResult();
-        }
-        return null;
-    }
-
-    public Map<String, Integer> getCommandStatistics(LocalDateTime from, LocalDateTime to) {
-        MongoCollection<Document> collection = getMongoCollection();
-
+    // ------------------------------------------------------------
+    // Mongo Aggregations
+    // ------------------------------------------------------------
+    public Map<String, Long> getCommandStatistics(LocalDateTime from, LocalDateTime to) {
         List<Document> pipeline = Arrays.asList(
-                new Document("$match", new Document("startTime", new Document("$gte", from).append("$lte", to))),
-                new Document("$group", new Document("_id", "$commandType").append("count", new Document("$sum", 1))));
+                new Document("$match",
+                        new Document("startTime",
+                                new Document("$gte", from)
+                                .append("$lte", to))),
+                new Document("$group",
+                        new Document("_id", "$commandType")
+                                .append("count", new Document("$sum", 1)))
+        );
 
-        AggregateIterable<Document> result = collection.aggregate(pipeline);
-        Map<String, Integer> stats = new HashMap<>();
-        for (Document doc : result) {
-            stats.put(doc.getString("_id"), doc.getInteger("count"));
+        Map<String, Long> stats = new HashMap<>();
+        for (Document doc : getMongoCollection().aggregate(pipeline)) {
+            stats.put(doc.getString("_id"), doc.getLong("count"));
         }
         return stats;
+    }
+
+    public double getAverageExecutionTime(CommandTypeName commandType) {
+        List<Document> pipeline = Arrays.asList(
+                new Document("$match",
+                        new Document("commandType", commandType.name())
+                                .append("status", CommandStatus.COMPLETED.name())),
+                new Document("$group",
+                        new Document("_id", null)
+                                .append("avgExecutionTime",
+                                        new Document("$avg", "$executionTimeMs")))
+        );
+
+        Document res = getMongoCollection().aggregate(pipeline).first();
+        return res == null ? 0.0 : res.getDouble("avgExecutionTime");
     }
 
     private MongoCollection<Document> getMongoCollection() {
         return mongoDatabase().getCollection("command_journal");
     }
-
-    public Double getAverageExecutionTime(CommandTypeName commandType) {
-        MongoCollection<Document> collection = getMongoCollection();
-
-        List<Document> pipeline = Arrays.asList(
-                new Document("", new Document("commandType", commandType.name()).append("status", "COMPLETED")),
-                new Document("$group", new Document("_id", null).append("avgExecutionTime",
-                        new Document("$avg", "$executionTimeMs"))));
-
-        AggregateIterable<Document> result = collection.aggregate(pipeline);
-
-        Document res = result.first();
-        if (res != null && res.getDouble("avgExecutionTime") != null) {
-            return res.getDouble("avgExecutionTime");
-        }
-        return 0.0;
-    }
-
 }

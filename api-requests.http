@@ -18,7 +18,7 @@ Content-Type: {{contentType}}
   "actor": "{{actor}}"
 }
 
-### Create User - John
+### Create User - Galileo
 POST {{baseUrl}}/api/commands/users/create HTTP/1.1
 Content-Type: {{contentType}}
 
@@ -37,6 +37,15 @@ Content-Type: {{contentType}}
   "actor": "{{actor}}"
 }
 
+### Delete User
+POST {{baseUrl}}/api/commands/sleep HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+  "seconds": 10,
+  "actor": "{{actor}}"
+}
+
 ### Composite Command
 
 POST {{baseUrl}}/api/commands/composite HTTP/1.1
@@ -45,17 +54,17 @@ Content-Type: application/json
 {
   "actor": "admin",
   "commands": [
-  {
-    "type": "Sleep",
-    "payload": {
-      "seconds": 90
-      }
-    },
     {
       "type": "CreateUser",
       "payload": {
         "username": "john.doe",
         "email": "john.doe@example.com"
+      }
+    },
+    {
+    "type": "Sleep",
+    "payload": {
+      "seconds": 10
       }
     },
     {
@@ -85,10 +94,10 @@ GET {{baseUrl}}/api/journal/{{commandId}} HTTP/1.1
 GET {{baseUrl}}/api/statistics/commands HTTP/1.1
 
 ### Get Average Time for CreateUserCommand
-GET {{baseUrl}}/api/statistics/avg-time/dev.marcotondi.application.CreateUserCommand HTTP/1.1
+GET {{baseUrl}}/api/statistics/avg-time/CREATE_USER HTTP/1.1
 
 ### Get Average Time for UpdateUserCommand
-GET {{baseUrl}}/api/statistics/avg-time/dev.marcotondi.application.UpdateUserCommand HTTP/1.1
+# GET {{baseUrl}}/api/statistics/avg-time/UPDATE_USER HTTP/1.1
 
 ### Get Average Time for DeleteUserCommand
-GET {{baseUrl}}/api/statistics/avg-time/dev.marcotondi.application.DeleteUserCommand HTTP/1.1
+GET {{baseUrl}}/api/statistics/avg-time/DELETE_USER HTTP/1.1

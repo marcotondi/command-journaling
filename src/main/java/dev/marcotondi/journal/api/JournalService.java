@@ -1,30 +1,28 @@
 package dev.marcotondi.journal.api;
 
 import java.util.List;
+import java.util.Optional;
 
+import dev.marcotondi.core.CommandStatus;
 import dev.marcotondi.core.api.CommandDescriptor;
-import dev.marcotondi.core.api.CommandStatus;
 import dev.marcotondi.journal.domain.JournalEntry;
 
 public interface JournalService {
 
+    JournalEntry getOrCreateEntry(CommandDescriptor descriptor, CommandStatus initialStatus);
+
     JournalEntry createJournalEntry(CommandDescriptor descriptor, CommandStatus status);
-
-    void linkChildToParent(JournalEntry child, JournalEntry parent);
-
-    void updateJournalStatus(JournalEntry entry, CommandStatus status);
 
     <R> void updateJournalOnSuccess(JournalEntry entry, R result, long durationMs);
 
     void updateJournalOnFailure(JournalEntry entry, Exception e);
 
-    List<JournalEntry> getAllEntries();
+    <R> void updateJournalOnRollBack(JournalEntry entry, R result, long durationMs);
 
-    JournalEntry getEntriesByCommandId(String commandId);
+    void updateJournalStatus(JournalEntry entry, CommandStatus status);
 
-    List<JournalEntry> getChildEntries(String parentCommandId);
+    Optional<JournalEntry> findByCommandId(String commandId);
 
-    JournalEntry getParentEntry(String childCommandId);
-
+	List<JournalEntry> getAllEntries();
 
 }
