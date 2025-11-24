@@ -2,11 +2,11 @@ package dev.marcotondi.core.domain;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 import org.jboss.logging.Logger;
 
 import dev.marcotondi.core.CommandStatus;
-import dev.marcotondi.core.api.CommandDescriptor;
 import dev.marcotondi.core.api.ICommand;
 import dev.marcotondi.core.api.JournalService;
 import dev.marcotondi.core.domain.exception.CommandExecutionException;
@@ -29,22 +29,22 @@ public abstract class Command<R> implements ICommand<R> {
         return descriptor;
     }
 
-    @Override
+    public abstract CommandDescriptor descriptorFromJournal(Map<String, Object> payload, LocalDateTime time);
+
     public abstract R doExecute();
 
-    @Override
     public abstract R doUndo();
 
     @Override
     public final R execute() {
-        LOG.debugf("Creating initial journal entry for command: %s", descriptor.commandType());
+        LOG.debugf("Creating initial journal entry for command: %s", descriptor.getCommandType());
 
         JournalEntity entry = journal.getOrCreateEntry(
                 getDescriptor(),
                 CommandStatus.PENDING);
 
         try {
-            LOG.debugf("Executing command: %s", descriptor.commandType());
+            LOG.debugf("Executing command: %s", descriptor.getCommandType());
 
             journal.updateJournalStatus(entry, CommandStatus.EXECUTING);
 
@@ -57,18 +57,18 @@ public abstract class Command<R> implements ICommand<R> {
             return result;
 
         } catch (Exception e) {
-            LOG.errorf(e, "Command execution failed for command ID %s", getDescriptor().commandId());
+            LOG.errorf(e, "Command execution failed for command ID %s", getDescriptor().getCommandId());
             journal.updateJournalOnFailure(entry, e);
 
             throw new CommandExecutionException(
-                    "Failed to execute command: " + getDescriptor().commandId(), e);
+                    "Failed to execute command: " + getDescriptor().getCommandId(), e);
         }
     }
 
     @Override
     public final R undo() {
 
-        String commandId = getDescriptor().commandId().toString();
+        String commandId = getDescriptor().getCommandId().toString();
 
         JournalEntity entry = journal.findByCommandId(commandId)
                 .orElseThrow(() -> new IllegalStateException(
@@ -76,7 +76,7 @@ public abstract class Command<R> implements ICommand<R> {
 
         try {
 
-            LOG.debugf("Rollback command in: %s", descriptor.commandType());
+            LOG.debugf("Rollback command in: %s", descriptor.getCommandType());
 
             journal.updateJournalStatus(entry, CommandStatus.EXECUTING_ROLL_BACK);
 

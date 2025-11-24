@@ -4,24 +4,22 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.bson.Document;
 import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.marcotondi.core.CommandStatus;
-import dev.marcotondi.core.entity.JournalEntity;
-import dev.marcotondi.core.api.CommandDescriptor;
 import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.core.api.JournalService;
-import dev.marcotondi.core.api.Payload;
-import dev.marcotondi.core.domain.PayloadMapper;
+import dev.marcotondi.core.domain.CommandDescriptor;
+import dev.marcotondi.core.entity.JournalEntity;
 import dev.marcotondi.core.repository.JournalRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class JournalServiceImpl implements JournalService {
-
     private static final Logger LOG = Logger.getLogger(JournalServiceImpl.class);
 
     @Inject
@@ -29,9 +27,6 @@ public class JournalServiceImpl implements JournalService {
 
     @Inject
     ObjectMapper objectMapper;
-
-    @Inject
-    PayloadMapper payloadMapper;
 
     // ------------------------------------------------------------
     // ENTRY CREATION
@@ -42,7 +37,7 @@ public class JournalServiceImpl implements JournalService {
             CommandDescriptor descriptor,
             CommandStatus initialStatus) {
 
-        return findByCommandId(descriptor.commandId().toString())
+        return findByCommandId(descriptor.getCommandId().toString())
                 .orElseGet(() -> createJournalEntity(descriptor, initialStatus));
     }
 
@@ -51,18 +46,15 @@ public class JournalServiceImpl implements JournalService {
             CommandDescriptor descriptor,
             CommandStatus status) {
 
-        String commandId = descriptor.commandId().toString();
-        CommandTypeName typeName = descriptor.commandType();
-        int version = Payload.version;
+        String commandId = descriptor.getCommandId().toString();
+        CommandTypeName typeName = descriptor.getCommandType();
 
-        String payloadJson = serializePayload(descriptor, commandId);
+        Document document = serializePayload(descriptor, commandId);
 
         JournalEntity entry = new JournalEntity(
                 commandId,
                 typeName,
-                version,
-                descriptor.actor(),
-                payloadJson,
+                document,
                 LocalDateTime.now(),
                 status.name());
 
@@ -145,10 +137,11 @@ public class JournalServiceImpl implements JournalService {
     // INTERNAL UTILS
     // ------------------------------------------------------------
 
-    private String serializePayload(CommandDescriptor descriptor, String commandId) {
+    private Document serializePayload(CommandDescriptor descriptor, String commandId) {
         try {
-            Payload dto = payloadMapper.toPayload(descriptor);
-            return dto != null ? objectMapper.writeValueAsString(dto) : null;
+            var json = objectMapper.writeValueAsString(descriptor);
+
+            return Document.parse(json);
         } catch (Exception e) {
             LOG.errorf(e, "Payload serialization failed for command %s", commandId);
             throw new RuntimeException("Cannot serialize payload for " + commandId, e);

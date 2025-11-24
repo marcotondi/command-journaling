@@ -1,18 +1,16 @@
 package dev.marcotondi.application.sleep.command;
 
 import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.UUID;
 
 import org.jboss.logging.Logger;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import dev.marcotondi.application.sleep.model.SleepDescriptor;
-import dev.marcotondi.application.sleep.model.SleepPayloadV1;
 import dev.marcotondi.core.api.CommandType;
 import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.core.domain.Command;
-import dev.marcotondi.core.domain.exception.CommandDescriptorException;
+import dev.marcotondi.core.domain.CommandDescriptor;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
@@ -20,53 +18,36 @@ import jakarta.enterprise.context.ApplicationScoped;
 public class SleepCommand extends Command<String> {
     private static final Logger LOG = Logger.getLogger(SleepCommand.class);
 
+
+    @Override
+    public CommandDescriptor descriptorFromJournal(Map<String, Object> payload, LocalDateTime time) {
+        return new SleepDescriptor(
+                UUID.fromString((String) payload.get("commandId")),
+                time, // ((String) payload.get("timestamp")),
+                CommandTypeName.DELETE_USER,
+                (String) payload.get("actor"),
+                (Integer) payload.get("seconds"));
+    }
+
     @Override
     public String doExecute() {
-        LOG.infof("Executing SleepCommand for second: %s", ((SleepDescriptor) getDescriptor()).payload().seconds());
+        LOG.infof("Executing SleepCommand for second: %s", ((SleepDescriptor) getDescriptor()).getSeconds());
 
         try {
-            Thread.sleep(((SleepDescriptor) getDescriptor()).payload().seconds() * 1000L);
+            Thread.sleep(((SleepDescriptor) getDescriptor()).getSeconds() * 1000L);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             LOG.error("Sleep was interrupted", e);
             return "Sleep was interrupted.";
         }
 
-        return "Sleep of " + ((SleepDescriptor) getDescriptor()).payload().seconds() + " seconds completed.";
+        return "Sleep of " + ((SleepDescriptor) getDescriptor()).getSeconds() + " seconds completed.";
     }
 
     @Override
     public String doUndo() {
         LOG.infof("SleepCommand cannot be undone.");
         return "SleepCommand cannot be undone.";
-    }
-
-    @Override
-    public void descriptorFromJournal(
-            CommandTypeName type,
-            String commandId,
-            int payloadVersion,
-            String actor,
-            String payload,
-            LocalDateTime startTime,
-            ObjectMapper mapper
-    ){
-
-        if (payloadVersion != SleepPayloadV1.version) {
-            throw new CommandDescriptorException("Unsupported payload version for Sleep: " + payloadVersion, type, payload);
-        }
-        SleepPayloadV1 payloadDto;
-        try {
-            payloadDto = mapper.readValue(payload, SleepPayloadV1.class);
-        } catch (JsonProcessingException e) {
-            throw new CommandDescriptorException("Invalid Sleep payload", type, payload);
-        }
-        // Use the canonical constructor to preserve original ID and timestamp
-        this.setDescriptor(new SleepDescriptor(
-                java.util.UUID.fromString(commandId),
-                startTime,
-                actor,
-                payloadDto));
     }
 
 }

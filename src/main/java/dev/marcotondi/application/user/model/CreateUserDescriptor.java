@@ -3,36 +3,46 @@ package dev.marcotondi.application.user.model;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import dev.marcotondi.core.api.CommandDescriptor;
 import dev.marcotondi.core.api.CommandTypeName;
-import dev.marcotondi.core.api.Payload;
+import dev.marcotondi.core.domain.CommandDescriptor;
 
-/**
- * A command to create a new user.
- * This is an immutable data record that holds metadata and a payload.
- */
-public record CreateUserDescriptor(
-        UUID commandId,
-        LocalDateTime timestamp,
-        String actor,
-        CreateUserPayloadV1 payload) implements CommandDescriptor {
+public class CreateUserDescriptor extends CommandDescriptor {
 
-    // Convenience constructor for creating a new command descriptor from scratch.
+    private final String username;
+    private final String email;
+
     public CreateUserDescriptor(String actor, String username, String email) {
-        this(UUID.randomUUID(),
-                LocalDateTime.now(),
-                actor,
-                new CreateUserPayloadV1(username, email));
+        super(CommandTypeName.CREATE_USER, actor);
+
+        this.username = username;
+        this.email = email;
+    }
+
+    public CreateUserDescriptor(UUID commandId, LocalDateTime timestamp, CommandTypeName commandType, String actor, String username, String email) {
+        super(commandId, timestamp, commandType, actor);
+
+        this.username = username;
+        this.email = email;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getEmail() {
+        return email;
     }
 
     @Override
-    public CommandTypeName commandType() {
-        return CommandTypeName.CREATE_USER;
-    }
-
-    @Override
-    public Payload getPayload() {
-        return this.payload;
+    public String toString() {
+        return "{" +
+                " commandId='" + getCommandId() + "'" +
+                ", commandType='" + getCommandType() + "'" +
+                ", timestamp='" + getTimestamp() + "'" +
+                ", actor='" + getActor() + "'" +
+                ", username='" + getUsername() + "'" +
+                ", email='" + getEmail() + "'" +
+                "}";
     }
 
 }

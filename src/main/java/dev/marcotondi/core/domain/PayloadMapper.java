@@ -1,13 +1,12 @@
-package dev.marcotondi.core.domain;
+// package dev.marcotondi.core.domain;
 
-import dev.marcotondi.core.api.CommandDescriptor;
-import dev.marcotondi.core.api.Payload;
-import jakarta.enterprise.context.ApplicationScoped;
+// import dev.marcotondi.core.api.Payload;
+// import jakarta.enterprise.context.ApplicationScoped;
 
-@ApplicationScoped
-public class PayloadMapper {
+// @ApplicationScoped
+// public class PayloadMapper {
 
-    public Payload toPayload(CommandDescriptor descriptor) {
-        return descriptor.getPayload();
-    }
-}
+//     public Payload toPayload(CommandDescriptor descriptor) {
+//         return descriptor.getPayload();
+//     }
+// }

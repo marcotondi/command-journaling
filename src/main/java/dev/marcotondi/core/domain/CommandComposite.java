@@ -1,6 +1,5 @@
 package dev.marcotondi.core.domain;
 
-import dev.marcotondi.core.api.CommandDescriptor;
 import dev.marcotondi.core.api.ICommand;
 
 public abstract class CommandComposite<R> implements ICommand<R> {

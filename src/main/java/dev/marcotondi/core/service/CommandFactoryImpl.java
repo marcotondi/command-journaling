@@ -6,14 +6,12 @@ import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import dev.marcotondi.core.api.CommandDescriptor;
 import dev.marcotondi.core.api.CommandType;
 import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.core.api.ICommand;
 import dev.marcotondi.core.api.ICommandFactory;
 import dev.marcotondi.core.domain.Command;
+import dev.marcotondi.core.domain.CommandDescriptor;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -48,7 +46,7 @@ public class CommandFactoryImpl implements ICommandFactory {
 
     @Override
     public <R> ICommand<R> buildCommand(CommandDescriptor descriptor) {
-        Command<R> command = createCommandInstance(descriptor.commandType());
+        Command<R> command = createCommandInstance(descriptor.getCommandType());
         command.setDescriptor(descriptor);
         return command;
     }
@@ -56,18 +54,12 @@ public class CommandFactoryImpl implements ICommandFactory {
     @Override
     public <R> ICommand<R> buildCommand(
             CommandTypeName commandType,
-            String commandId,
-            int payloadVersion,
-            String actor,
-            String payload,
-            LocalDateTime startTime,
-            ObjectMapper objectMapper) {
+            Map<String, Object> payload,
+            LocalDateTime startTime) {
 
         Command<R> command = createCommandInstance(commandType);
-
-        command.descriptorFromJournal(
-                commandType, commandId, payloadVersion,
-                actor, payload, startTime, objectMapper);
+        var descriptor = command.descriptorFromJournal(payload, startTime);
+        command.setDescriptor(descriptor);
 
         return command;
     }

@@ -1,20 +1,18 @@
 package dev.marcotondi.application.user.command;
 
 import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.UUID;
 
 import org.jboss.logging.Logger;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import dev.marcotondi.application.user.model.CreateUserDescriptor;
-import dev.marcotondi.application.user.model.CreateUserPayloadV1;
 import dev.marcotondi.application.user.model.User;
 import dev.marcotondi.application.user.repository.UserRepository;
 import dev.marcotondi.core.api.CommandType;
 import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.core.domain.Command;
-import dev.marcotondi.core.domain.exception.CommandDescriptorException;
+import dev.marcotondi.core.domain.CommandDescriptor;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -27,9 +25,22 @@ public class CreateUserCommand extends Command<String> {
     private UserRepository userRepository;
 
     @Override
+    public CommandDescriptor descriptorFromJournal(Map<String, Object> payload, LocalDateTime time) {
+        return new CreateUserDescriptor(
+                UUID.fromString((String) payload.get("commandId")),
+                time, // ((String) payload.get("timestamp")),
+                CommandTypeName.CREATE_USER,
+                (String) payload.get("actor"),
+                (String) payload.get("username"),
+                (String) payload.get("email"));
+    }
+
+    @Override
     public String doExecute() {
-        String username = ((CreateUserPayloadV1) ((CreateUserDescriptor) getDescriptor()).getPayload()).username();
-        String email = ((CreateUserPayloadV1) ((CreateUserDescriptor) getDescriptor()).getPayload()).email();
+        var descriptor = (CreateUserDescriptor) getDescriptor();
+
+        String username = descriptor.getUsername();
+        String email = descriptor.getEmail();
 
         // Idempotency Check: See if a user with this email already exists.
         if (userRepository.findByEmail(email).isPresent()) {
@@ -50,34 +61,6 @@ public class CreateUserCommand extends Command<String> {
     public String doUndo() {
         LOG.info("Undo operation is not supported for CreateUserDescriptor.");
         return "Undo operation is not supported for CreateUserDescriptor.";
-    }
-
-    @Override
-    public void descriptorFromJournal(
-            CommandTypeName type,
-            String commandId,
-            int payloadVersion,
-            String actor,
-            String payload,
-            LocalDateTime startTime,
-            ObjectMapper mapper) {
-
-        if (payloadVersion != CreateUserPayloadV1.version) {
-            throw new IllegalStateException("Unsupported payload version for CreateUser: " + payloadVersion);
-        }
-        CreateUserPayloadV1 payloadDto;
-        try {
-            payloadDto = mapper.readValue(payload, CreateUserPayloadV1.class);
-        } catch (JsonProcessingException e) {
-            throw new CommandDescriptorException("Invalid CreateUser payload", type, payload);
-        }
-
-        // Use the canonical constructor to preserve original ID and timestamp
-        this.setDescriptor(new CreateUserDescriptor(
-                java.util.UUID.fromString(commandId),
-                startTime,
-                actor,
-                payloadDto));
     }
 
 }

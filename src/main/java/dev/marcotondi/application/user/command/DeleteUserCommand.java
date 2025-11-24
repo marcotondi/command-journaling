@@ -1,19 +1,17 @@
 package dev.marcotondi.application.user.command;
 
 import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.UUID;
 
 import org.jboss.logging.Logger;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import dev.marcotondi.application.user.model.DeleteUserDescriptor;
-import dev.marcotondi.application.user.model.DeleteUserPayloadV1;
 import dev.marcotondi.application.user.repository.UserRepository;
 import dev.marcotondi.core.api.CommandType;
 import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.core.domain.Command;
-import dev.marcotondi.core.domain.exception.CommandDescriptorException;
+import dev.marcotondi.core.domain.CommandDescriptor;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -27,9 +25,21 @@ public class DeleteUserCommand extends Command<String> {
     private UserRepository userRepository;
 
     @Override
+    public CommandDescriptor descriptorFromJournal(Map<String, Object> payload, LocalDateTime time) {
+        return new DeleteUserDescriptor(
+                UUID.fromString((String) payload.get("commandId")),
+                time, // ((String) payload.get("timestamp")),
+                CommandTypeName.DELETE_USER,
+                (String) payload.get("actor"),
+                (String) payload.get("email"));
+    }
+
+    @Override
     @Transactional
     public String doExecute() {
-        var email = ((DeleteUserDescriptor) getDescriptor()).payload().email();
+        var descriptor = (DeleteUserDescriptor) getDescriptor();
+
+        var email = descriptor.getEmail();
         LOG.infof("Executing DeleteUserCommand for email: %s", email);
 
         return userRepository.findByEmail(email)
@@ -44,34 +54,6 @@ public class DeleteUserCommand extends Command<String> {
     public String doUndo() {
         LOG.info("Undo operation is not supported for DeleteUserCommand.");
         return "Undo operation is not supported for DeleteUserCommand.";
-    }
-
-    @Override
-    public void descriptorFromJournal(
-            CommandTypeName type,
-            String commandId,
-            int payloadVersion,
-            String actor,
-            String payload,
-            LocalDateTime startTime,
-            ObjectMapper mapper
-    ){
-
-        if (payloadVersion != DeleteUserPayloadV1.version) {
-            throw new IllegalStateException("Unsupported payload version for DeleteUser: " + payloadVersion);
-        }
-        DeleteUserPayloadV1 payloadDto;
-        try {
-            payloadDto = mapper.readValue(payload, DeleteUserPayloadV1.class);
-        } catch (JsonProcessingException e) {
-            throw new CommandDescriptorException("Invalid DeleteUser payload", type, payload);
-        }
-        // Use the canonical constructor to preserve original ID and timestamp
-        this.setDescriptor(new DeleteUserDescriptor(
-                java.util.UUID.fromString(commandId),
-                startTime,
-                actor,
-                payloadDto));
     }
 
 }

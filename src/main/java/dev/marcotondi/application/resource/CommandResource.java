@@ -3,6 +3,7 @@ package dev.marcotondi.application.resource;
 import java.net.URI;
 
 import dev.marcotondi.application.sleep.model.SleepDescriptor;
+import dev.marcotondi.application.todo.model.TodoDescriptor;
 import dev.marcotondi.application.user.model.CreateUserDescriptor;
 import dev.marcotondi.application.user.model.DeleteUserDescriptor;
 import dev.marcotondi.core.api.ICommand;
@@ -44,7 +45,7 @@ public class CommandResource {
         // Return 202 Accepted to indicate the command has been accepted for processing.
         // The location header can point to a resource to check the command's status.
         return Response.accepted()
-            .location(URI.create("/api/journal/" + descriptor.commandId()))
+            .location(URI.create("/api/journal/" + descriptor.getCommandId()))
             .build();
     }
 
@@ -64,7 +65,7 @@ public class CommandResource {
         // Return 202 Accepted to indicate the command has been accepted for processing.
         // The location header can point to a resource to check the command's status.
         return Response.accepted()
-            .location(URI.create("/api/journal/" + descriptor.commandId()))
+            .location(URI.create("/api/journal/" + descriptor.getCommandId()))
             .build();
     }
 
@@ -84,7 +85,24 @@ public class CommandResource {
         // Return 202 Accepted to indicate the command has been accepted for processing.
         // The location header can point to a resource to check the command's status.
         return Response.accepted()
-            .location(URI.create("/api/journal/" + descriptor.commandId()))
+            .location(URI.create("/api/journal/" + descriptor.getCommandId()))
+            .build();
+    }
+
+    @POST
+    @Path("/todo")
+    public Response todoUser() {
+        var descriptor = new TodoDescriptor();
+
+        // Create the Command object using the factory
+        // Assuming DeleteUserCommand implements Command<Void> and Initializable<DeleteUserDescriptor>
+        ICommand<?> todoCommand = commandFactory.buildCommand(descriptor);
+
+        manager.dispatchAsync(todoCommand);
+        // Return 202 Accepted to indicate the command has been accepted for processing.
+        // The location header can point to a resource to check the command's status.
+        return Response.accepted()
+            .location(URI.create("/api/journal/" + descriptor.getCommandId()))
             .build();
     }
 

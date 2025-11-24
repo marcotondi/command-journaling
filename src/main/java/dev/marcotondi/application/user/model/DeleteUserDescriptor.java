@@ -3,36 +3,42 @@ package dev.marcotondi.application.user.model;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import dev.marcotondi.core.api.CommandDescriptor;
 import dev.marcotondi.core.api.CommandTypeName;
-import dev.marcotondi.core.api.Payload;
+import dev.marcotondi.core.domain.CommandDescriptor;
 
 /**
  * A command to delete a user.
  * This is an immutable data record that holds metadata and a payload.
  */
-public record DeleteUserDescriptor(
-        UUID commandId,
-        LocalDateTime timestamp,
-        String actor,
-        DeleteUserPayloadV1 payload) implements CommandDescriptor {
+public class DeleteUserDescriptor extends CommandDescriptor {
 
-    // Convenience constructor for creating a new command descriptor from scratch.
+    private final String email;
+
     public DeleteUserDescriptor(String actor, String email) {
-        this(UUID.randomUUID(),
-                LocalDateTime.now(),
-                actor,
-                new DeleteUserPayloadV1(email));
+        super(CommandTypeName.DELETE_USER, actor);
+
+        this.email = email;
+    }
+
+    public DeleteUserDescriptor(UUID commandId, LocalDateTime timestamp, CommandTypeName commandType, String actor,
+            String email) {
+        super(commandId, timestamp, commandType, actor);
+
+        this.email = email;
+    }
+
+    public String getEmail() {
+        return email;
     }
 
     @Override
-    public CommandTypeName commandType() {
-        return CommandTypeName.DELETE_USER;
+    public String toString() {
+        return "{" +
+                " commandId='" + getCommandId() + "'" +
+                ", commandType='" + getCommandType() + "'" +
+                ", timestamp='" + getTimestamp() + "'" +
+                ", actor='" + getActor() + "'" +
+                ", email='" + getEmail() + "'" +
+                "}";
     }
-
-    @Override
-    public Payload getPayload() {
-        return this.payload;
-    }
-
 }

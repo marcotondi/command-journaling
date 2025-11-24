@@ -6,10 +6,10 @@ import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.marcotondi.core.entity.JournalEntity;
 import dev.marcotondi.core.api.ICommand;
 import dev.marcotondi.core.api.ICommandFactory;
 import dev.marcotondi.core.api.ICommandManager;
+import dev.marcotondi.core.entity.JournalEntity;
 import dev.marcotondi.core.repository.JournalRepository;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.annotation.Priority;
@@ -53,12 +53,9 @@ class CommandRecoveryService {
                 ICommand<?> command = commandFactory
                         .buildCommand(
                                 entry.commandType,
-                                entry.commandId,
-                                entry.payloadVersion,
-                                entry.actor,
                                 entry.payload,
-                                entry.startTime,
-                                objectMapper);
+                                entry.startTime
+                                );
 
                 dispatcher.dispatch(command);
 

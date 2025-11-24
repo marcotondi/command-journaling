@@ -4,9 +4,9 @@ import java.util.concurrent.CompletableFuture;
 
 import org.jboss.logging.Logger;
 
-import dev.marcotondi.core.api.CommandDescriptor;
 import dev.marcotondi.core.api.ICommand;
 import dev.marcotondi.core.api.ICommandManager;
+import dev.marcotondi.core.domain.CommandDescriptor;
 import dev.marcotondi.core.domain.exception.CommandExecutionException;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -25,16 +25,16 @@ public class CommandManagerImpl implements ICommandManager {
 
         final CommandDescriptor descriptor = command.getDescriptor();
         try {
-            LOG.debugf("Lanch execute command in transaction: %s", descriptor.commandType());
+            LOG.debugf("Lanch execute command in transaction: %s", descriptor.getCommandType());
 
             R result = command.execute();
 
             return result;
 
         } catch (Exception e) {
-            LOG.errorf(e, "Command execution failed for command ID %s", descriptor.commandId());
+            LOG.errorf(e, "Command execution failed for command ID %s", descriptor.getCommandId());
             throw new CommandExecutionException(
-                    "Failed to execute command: " + descriptor.commandId(), e);
+                    "Failed to execute command: " + descriptor.getCommandId(), e);
         }
     }
 

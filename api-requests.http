@@ -37,7 +37,7 @@ Content-Type: {{contentType}}
   "actor": "{{actor}}"
 }
 
-### Delete User
+### Sleep thread
 POST {{baseUrl}}/api/commands/sleep HTTP/1.1
 Content-Type: {{contentType}}
 
@@ -45,6 +45,10 @@ Content-Type: {{contentType}}
   "seconds": 10,
   "actor": "{{actor}}"
 }
+
+### Todo
+POST {{baseUrl}}/api/commands/todo HTTP/1.1
+Content-Type: {{contentType}}
 
 ### Composite Command
 
