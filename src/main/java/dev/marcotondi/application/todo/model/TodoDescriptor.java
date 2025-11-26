@@ -7,6 +7,8 @@ import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.core.domain.CommandDescriptor;
 
 public class TodoDescriptor extends CommandDescriptor {
+    private static final long serialVersionUID = 6671140159L;
+
 
     public TodoDescriptor() {
         super(CommandTypeName.TODO, "system");

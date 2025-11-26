@@ -1,8 +1,6 @@
 package dev.marcotondi.core.service;
 
-import java.time.LocalDateTime;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 
@@ -12,11 +10,8 @@ import dev.marcotondi.core.api.ICommand;
 import dev.marcotondi.core.api.ICommandFactory;
 import dev.marcotondi.core.domain.Command;
 import dev.marcotondi.core.domain.CommandDescriptor;
-import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Instance;
-import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
@@ -26,23 +21,19 @@ public class CommandFactoryImpl implements ICommandFactory {
     @Inject
     Instance<Command<?>> commandPrototypes;
 
-    private Map<String, Class<? extends Command<?>>> commandClassMap;
-
-    void onStart(@Observes StartupEvent ev) {
-        commandClassMap = commandPrototypes.stream()
-                .filter(cmd -> getBeanClass(cmd).isAnnotationPresent(CommandType.class))
-                .collect(Collectors.toMap(
-                        cmd -> getBeanClass(cmd).getAnnotation(CommandType.class).value(),
-                        cmd -> (Class<? extends Command<?>>) getBeanClass(cmd),
-                        (existing, replacement) -> {
-                            LOG.warnf("Duplicate command type found for '%s'. Using %s and ignoring %s.",
-                                    getBeanClass(replacement).getAnnotation(CommandType.class).value(),
-                                    existing.getName(), replacement.getName());
-                            return existing;
-                        }));
-        LOG.infof("Initialized Command Registry with %d providers: %s", commandClassMap.size(),
-                commandClassMap.keySet());
-    }
+    // private Map<CommandTypeName, Command<?>> commandInstanceMap;
+    // private Map<String, Class<? extends Command<?>>> commandClassMap;
+    // void onStart(@Observes StartupEvent ev) {
+    // commandInstanceMap = commandPrototypes.stream()
+    // .filter(cmd -> getBeanClass(cmd).isAnnotationPresent(CommandType.class))
+    // .collect(Collectors.toMap(
+    // cmd -> getBeanClass(cmd).getAnnotation(CommandType.class).value(),
+    // cmd -> cmd
+    // ));
+    // LOG.infof("Initialized Command Registry with %d providers: %s",
+    // commandClassMap.size(),
+    // commandClassMap.keySet());
+    // }
 
     @Override
     public <R> ICommand<R> buildCommand(CommandDescriptor descriptor) {
@@ -54,26 +45,24 @@ public class CommandFactoryImpl implements ICommandFactory {
     @Override
     public <R> ICommand<R> buildCommand(
             CommandTypeName commandType,
-            Map<String, Object> payload,
-            LocalDateTime startTime) {
+            Map<String, Object> payload) {
 
         Command<R> command = createCommandInstance(commandType);
-        var descriptor = command.descriptorFromJournal(payload, startTime);
-        command.setDescriptor(descriptor);
+        command.setDescriptor(payload);
 
         return command;
     }
 
     private <R> Command<R> createCommandInstance(CommandTypeName commandType) {
-        String commandTypeName = commandType.name();
-        Class<? extends Command<?>> commandClass = commandClassMap.get(commandTypeName);
+        LOG.infof("Seach Command with %s Annotatio Type", commandType.name());
 
-        if (commandClass == null) {
-            throw new IllegalStateException("No provider found for command type: " + commandTypeName);
-        }
-
-        Instance<?> provider = CDI.current().select(commandClass);
-        return (Command<R>) provider.get();
+        return commandPrototypes.stream()
+                .filter(cmd -> getBeanClass(cmd).isAnnotationPresent(CommandType.class))
+                .filter(cmd -> getBeanClass(cmd).getAnnotation(CommandType.class).value().equals(commandType.name()))
+                .findFirst()
+                .map(cmd -> (Command<R>) cmd)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "No command found for type: " + commandType));
     }
 
     private Class<?> getBeanClass(Object beanInstance) {
@@ -83,5 +72,14 @@ public class CommandFactoryImpl implements ICommandFactory {
         }
         return beanClass;
     }
+
+    // private <R> Command<R> createCommandInstance(CommandTypeName commandType) {
+    // Command<R> command = (Command<R>) commandInstanceMap.get(commandType);
+    // if (command == null) {
+    // throw new IllegalStateException("No provider found for command type: " +
+    // commandType.name());
+    // }
+    // return command;
+    // }
 
 }

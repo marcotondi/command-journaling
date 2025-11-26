@@ -21,15 +21,7 @@ public abstract class Command<R> implements ICommand<R> {
 
     private CommandDescriptor descriptor;
 
-    public void setDescriptor(CommandDescriptor descriptor) {
-        this.descriptor = descriptor;
-    }
-
-    public CommandDescriptor getDescriptor() {
-        return descriptor;
-    }
-
-    public abstract CommandDescriptor descriptorFromJournal(Map<String, Object> payload, LocalDateTime time);
+    public abstract CommandDescriptor setDescriptor(Map<String, Object> payload);
 
     public abstract R doExecute();
 
@@ -95,7 +87,14 @@ public abstract class Command<R> implements ICommand<R> {
             throw new CommandExecutionException(
                     "Undo failed for command: " + commandId, e);
         }
+    }
 
+    public void setDescriptor(CommandDescriptor descriptor) {
+        this.descriptor = descriptor;
+    }
+
+    public CommandDescriptor getDescriptor() {
+        return descriptor;
     }
 
 }

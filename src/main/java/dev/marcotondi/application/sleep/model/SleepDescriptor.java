@@ -11,6 +11,8 @@ import dev.marcotondi.core.domain.CommandDescriptor;
  * This is an immutable data record that holds metadata and a payload.
  */
 public class SleepDescriptor extends CommandDescriptor {
+    private static final long serialVersionUID = 4483220038L;
+
 
     private final int seconds;
 

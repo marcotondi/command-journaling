@@ -38,15 +38,6 @@ public class TodoCommand extends Command<List<TodoEntity>> {
     private Integer todoId = null;
 
     @Override
-    public CommandDescriptor descriptorFromJournal(Map<String, Object> payload, LocalDateTime time) {
-        return new TodoDescriptor(
-                UUID.fromString((String) payload.get("commandId")),
-                time, // ((String) payload.get("timestamp")),
-                CommandTypeName.DELETE_USER,
-                (String) payload.get("actor"));
-    }
-
-    @Override
     public List<TodoEntity> doExecute() {
         try {
             String url = (todoId == null)
@@ -95,6 +86,19 @@ public class TodoCommand extends Command<List<TodoEntity>> {
         // Nessuna operazione di undo richiesta
         LOG.info("TodoCommand.doUndo() chiamato: nessuna azione eseguita");
         return Collections.emptyList();
+    }
+
+    @Override
+    public CommandDescriptor setDescriptor(Map<String, Object> payload) {
+
+        var descriptor = new TodoDescriptor(
+                UUID.fromString((String) payload.get("commandId")),
+                LocalDateTime.parse((String) payload.get("timestamp")),
+                CommandTypeName.DELETE_USER,
+                (String) payload.get("actor"));
+
+        this.setDescriptor(descriptor);
+        return descriptor;
     }
 
 }

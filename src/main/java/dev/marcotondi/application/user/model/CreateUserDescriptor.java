@@ -7,6 +7,7 @@ import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.core.domain.CommandDescriptor;
 
 public class CreateUserDescriptor extends CommandDescriptor {
+    private static final long serialVersionUID = 8583766018L;
 
     private final String username;
     private final String email;

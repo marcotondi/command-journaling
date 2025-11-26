@@ -25,17 +25,6 @@ public class CreateUserCommand extends Command<String> {
     private UserRepository userRepository;
 
     @Override
-    public CommandDescriptor descriptorFromJournal(Map<String, Object> payload, LocalDateTime time) {
-        return new CreateUserDescriptor(
-                UUID.fromString((String) payload.get("commandId")),
-                time, // ((String) payload.get("timestamp")),
-                CommandTypeName.CREATE_USER,
-                (String) payload.get("actor"),
-                (String) payload.get("username"),
-                (String) payload.get("email"));
-    }
-
-    @Override
     public String doExecute() {
         var descriptor = (CreateUserDescriptor) getDescriptor();
 
@@ -61,6 +50,20 @@ public class CreateUserCommand extends Command<String> {
     public String doUndo() {
         LOG.info("Undo operation is not supported for CreateUserDescriptor.");
         return "Undo operation is not supported for CreateUserDescriptor.";
+    }
+
+    @Override
+    public CommandDescriptor setDescriptor(Map<String, Object> payload) {
+        var descriptor = new CreateUserDescriptor(
+                UUID.fromString((String) payload.get("commandId")),
+                LocalDateTime.parse((String) payload.get("timestamp")),
+                CommandTypeName.CREATE_USER,
+                (String) payload.get("actor"),
+                (String) payload.get("username"),
+                (String) payload.get("email"));
+
+        this.setDescriptor(descriptor);
+        return descriptor;
     }
 
 }

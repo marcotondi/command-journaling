@@ -4,8 +4,6 @@ import java.util.List;
 
 import org.jboss.logging.Logger;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import dev.marcotondi.core.api.ICommand;
 import dev.marcotondi.core.api.ICommandFactory;
 import dev.marcotondi.core.api.ICommandManager;
@@ -29,9 +27,6 @@ class CommandRecoveryService {
     @Inject
     JournalRepository journalRepository;
 
-    @Inject
-    ObjectMapper objectMapper;
-
     void onStart(@Observes @Priority(Integer.MAX_VALUE) StartupEvent ev) {
         LOG.info("Starting recovery of interrupted commands...");
         recoverInterruptedCommands();
@@ -53,8 +48,7 @@ class CommandRecoveryService {
                 ICommand<?> command = commandFactory
                         .buildCommand(
                                 entry.commandType,
-                                entry.payload,
-                                entry.startTime
+                                entry.payload
                                 );
 
                 dispatcher.dispatch(command);

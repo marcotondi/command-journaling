@@ -1,6 +1,5 @@
 package dev.marcotondi.core.api;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
 import dev.marcotondi.core.domain.CommandDescriptor;
@@ -11,6 +10,5 @@ public interface ICommandFactory {
 
     <R> ICommand<R> buildCommand(
             CommandTypeName commandType,
-            Map<String, Object> payload,
-            LocalDateTime startTime);
+            Map<String, Object> payloadMap);
 }

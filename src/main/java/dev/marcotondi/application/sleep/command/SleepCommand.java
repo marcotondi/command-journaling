@@ -18,17 +18,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 public class SleepCommand extends Command<String> {
     private static final Logger LOG = Logger.getLogger(SleepCommand.class);
 
-
-    @Override
-    public CommandDescriptor descriptorFromJournal(Map<String, Object> payload, LocalDateTime time) {
-        return new SleepDescriptor(
-                UUID.fromString((String) payload.get("commandId")),
-                time, // ((String) payload.get("timestamp")),
-                CommandTypeName.DELETE_USER,
-                (String) payload.get("actor"),
-                (Integer) payload.get("seconds"));
-    }
-
     @Override
     public String doExecute() {
         LOG.infof("Executing SleepCommand for second: %s", ((SleepDescriptor) getDescriptor()).getSeconds());
@@ -50,4 +39,16 @@ public class SleepCommand extends Command<String> {
         return "SleepCommand cannot be undone.";
     }
 
+    @Override
+    public CommandDescriptor setDescriptor(Map<String, Object> payload) {
+        var descriptor = new SleepDescriptor(
+                UUID.fromString((String) payload.get("commandId")),
+                LocalDateTime.parse((String) payload.get("timestamp")),
+                CommandTypeName.DELETE_USER,
+                (String) payload.get("actor"),
+                (Integer) payload.get("seconds"));
+
+        this.setDescriptor(descriptor);
+        return descriptor;
+    }
 }
