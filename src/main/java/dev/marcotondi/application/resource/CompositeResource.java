@@ -4,7 +4,6 @@ import java.net.URI;
 
 import org.jboss.logging.Logger;
 
-import dev.marcotondi.application.composite.SampleCompositeCommand;
 import dev.marcotondi.core.api.ICommandFactory;
 import dev.marcotondi.core.api.ICommandManager;
 import jakarta.inject.Inject;
@@ -31,14 +30,19 @@ public class CompositeResource {
     public Response executeCompositeCommand() {
         LOG.info("Start composite command ");
 
-        SampleCompositeCommand scc = new SampleCompositeCommand(commandFactory);
+        // ICommand<?> command = commandFactory
+        //         .buildCommand(new SimpleCompositeDescriptor(
+        //                 CommandTypeName.SIMPLE_COMPOSITE,
+        //                 "system",
+        //                 new CommandDescriptor[] {
+        //                         new SleepDescriptor("system", 5),
+        //                         new TodoDescriptor() }));
 
-        manager.dispatch(scc);
+        // manager.dispatch(command);
 
         return Response.accepted()
                 .location(URI.create("/api/journal/" + 1L))
                 .build();
     }
-
 
 }

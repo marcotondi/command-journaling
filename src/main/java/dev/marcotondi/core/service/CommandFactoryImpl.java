@@ -37,6 +37,7 @@ public class CommandFactoryImpl implements ICommandFactory {
 
     @Override
     public <R> ICommand<R> buildCommand(CommandDescriptor descriptor) {
+
         Command<R> command = createCommandInstance(descriptor.getCommandType());
         command.setDescriptor(descriptor);
         return command;
@@ -54,7 +55,7 @@ public class CommandFactoryImpl implements ICommandFactory {
     }
 
     private <R> Command<R> createCommandInstance(CommandTypeName commandType) {
-        LOG.infof("Seach Command with %s Annotatio Type", commandType.name());
+        LOG.infof("Searching for Command annotated with type %s", commandType.name());
 
         return commandPrototypes.stream()
                 .filter(cmd -> getBeanClass(cmd).isAnnotationPresent(CommandType.class))

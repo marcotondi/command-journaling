@@ -1,6 +1,7 @@
 package dev.marcotondi.core.service;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -71,7 +72,7 @@ public class JournalServiceImpl implements JournalService {
             JournalEntity entry,
             R result,
             long durationMs) {
-        updateEntry(entry, CommandStatus.COMPLETED, durationMs, serializeResult(entry, result), null);
+        updateEntry(entry, CommandStatus.COMPLETED, durationMs, serializeResult(entry.commandId, result), null);
     }
 
     @Override
@@ -86,7 +87,7 @@ public class JournalServiceImpl implements JournalService {
             JournalEntity entry,
             R result,
             long durationMs) {
-        updateEntry(entry, CommandStatus.ROLLED_BACK, durationMs, serializeResult(entry, result), null);
+        updateEntry(entry, CommandStatus.ROLLED_BACK, durationMs, serializeResult(entry.commandId, result), null);
     }
 
     @Override
@@ -100,7 +101,7 @@ public class JournalServiceImpl implements JournalService {
             JournalEntity entry,
             CommandStatus status,
             Long durationMs,
-            String result,
+            Document result,
             String errorMessage) {
 
         entry.status = status.name();
@@ -148,12 +149,23 @@ public class JournalServiceImpl implements JournalService {
         }
     }
 
-    private <R> String serializeResult(JournalEntity entry, R result) {
+    private <R> Document serializeResult(String commandId, R result) {
         try {
-            return objectMapper.writeValueAsString(result);
+            // Se result è una stringa semplice, wrappala
+            if (result instanceof String) {
+                return new Document("msg", result);
+            }
+
+            // Se è un array o Collection, wrappalo
+            if (result instanceof Object[] || result instanceof Collection) {
+                return new Document("data", result);
+            }
+
+            // Altrimenti serializza come JSON e parsalo
+            return Document.parse(objectMapper.writeValueAsString(result));
         } catch (Exception e) {
-            LOG.errorf(e, "Result serialization failed for command %s", entry.commandId);
-            return "{\"error\": \"result serialization failed\"}";
+            LOG.errorf(e, "Result serialization failed for command %s", commandId);
+            return new Document("error", "result serialization failed");
         }
     }
 }

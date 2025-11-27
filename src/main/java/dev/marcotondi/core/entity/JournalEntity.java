@@ -24,7 +24,7 @@ public class JournalEntity extends PanacheMongoEntity {
     public LocalDateTime endTime;
     public Long executionTimeMs;
 
-    public String result;
+    public Document result;
     public String errorMessage;
 
     public String sourceIp;

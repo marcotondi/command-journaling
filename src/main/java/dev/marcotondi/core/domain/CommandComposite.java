@@ -5,9 +5,7 @@ import java.util.List;
 
 import org.jboss.logging.Logger;
 
-import dev.marcotondi.core.SimpleCommandDescriptor;
 import dev.marcotondi.core.api.ICommand;
-import dev.marcotondi.core.api.ICommandFactory;
 import dev.marcotondi.core.domain.exception.CommandExecutionException;
 
 /**
@@ -24,8 +22,7 @@ public abstract class CommandComposite<R> implements ICommand<List<R>> {
     private static final Logger LOG = Logger.getLogger(CommandComposite.class);
 
     private final List<ICommand<R>> commands = new ArrayList<>();
-
-    private final SimpleCommandDescriptor scd = new SimpleCommandDescriptor("system");
+    private final CompositeDescriptor descriptors;
 
     /**
      * Constructs a composite command.
@@ -34,14 +31,8 @@ public abstract class CommandComposite<R> implements ICommand<List<R>> {
      *                       executed.
      * @param commandFactory The factory to create the command instances.
      */
-    public CommandComposite(List<CommandDescriptor> descriptors, ICommandFactory commandFactory) {
-        if (descriptors == null || descriptors.isEmpty()) {
-            throw new IllegalArgumentException("Descriptors list cannot be null or empty.");
-        }
-        for (CommandDescriptor descriptor : descriptors) {
-            ICommand<R> command = commandFactory.buildCommand(descriptor);
-            this.commands.add(command);
-        }
+    public CommandComposite(CompositeDescriptor descriptors) {
+    this.descriptors = descriptors;
     }
 
     /**
@@ -94,7 +85,7 @@ public abstract class CommandComposite<R> implements ICommand<List<R>> {
 
     @Override
     public CommandDescriptor getDescriptor() {
-        return this.scd;
+        return this.descriptors;
     }
 
 }

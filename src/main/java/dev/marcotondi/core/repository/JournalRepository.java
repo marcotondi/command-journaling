@@ -11,8 +11,8 @@ import org.bson.Document;
 
 import com.mongodb.client.MongoCollection;
 
-import dev.marcotondi.core.CommandStatus;
 import dev.marcotondi.core.entity.JournalEntity;
+import dev.marcotondi.core.CommandStatus;
 import dev.marcotondi.core.api.CommandTypeName;
 import io.quarkus.mongodb.panache.PanacheMongoRepository;
 import jakarta.enterprise.context.ApplicationScoped;
