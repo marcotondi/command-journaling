@@ -23,9 +23,9 @@ public abstract class Command<R> implements ICommand<R> {
 
     public abstract CommandDescriptor setDescriptor(Map<String, Object> payload);
 
-    public abstract R doExecute();
+    protected abstract R doExecute();
 
-    public abstract R doUndo();
+    protected abstract R doUndo();
 
     @Override
     public final R execute() {

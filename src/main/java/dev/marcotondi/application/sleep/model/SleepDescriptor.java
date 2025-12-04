@@ -13,7 +13,6 @@ import dev.marcotondi.core.domain.CommandDescriptor;
 public class SleepDescriptor extends CommandDescriptor {
     private static final long serialVersionUID = 4483220038L;
 
-
     private final int seconds;
 
     public SleepDescriptor(String actor, int seconds) {

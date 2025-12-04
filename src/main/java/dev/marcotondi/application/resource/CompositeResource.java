@@ -1,11 +1,15 @@
 package dev.marcotondi.application.resource;
 
 import java.net.URI;
-
 import org.jboss.logging.Logger;
-
+import dev.marcotondi.application.composite.SimpleCompositeDescriptor;
+import dev.marcotondi.application.sleep.model.SleepDescriptor;
+import dev.marcotondi.application.user.model.CreateUserDescriptor;
+import dev.marcotondi.core.api.CommandTypeName;
+import dev.marcotondi.core.api.ICommand;
 import dev.marcotondi.core.api.ICommandFactory;
 import dev.marcotondi.core.api.ICommandManager;
+import dev.marcotondi.core.domain.CommandDescriptor;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -30,18 +34,18 @@ public class CompositeResource {
     public Response executeCompositeCommand() {
         LOG.info("Start composite command ");
 
-        // ICommand<?> command = commandFactory
-        //         .buildCommand(new SimpleCompositeDescriptor(
-        //                 CommandTypeName.SIMPLE_COMPOSITE,
-        //                 "system",
-        //                 new CommandDescriptor[] {
-        //                         new SleepDescriptor("system", 5),
-        //                         new TodoDescriptor() }));
+        ICommand<?> composite = commandFactory
+                .buildCommand(new SimpleCompositeDescriptor(
+                        CommandTypeName.SIMPLE_COMPOSITE,
+                        "system",
+                        new CommandDescriptor[] {
+                                new SleepDescriptor("system", 5),
+                                new CreateUserDescriptor("system", "marco", "marco@email.dev")}));
 
-        // manager.dispatch(command);
+        manager.dispatch(composite);
 
         return Response.accepted()
-                .location(URI.create("/api/journal/" + 1L))
+                .location(URI.create("/api/journal/" + composite.getDescriptor().getCommandId()))
                 .build();
     }
 

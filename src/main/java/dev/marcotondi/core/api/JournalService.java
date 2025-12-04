@@ -21,8 +21,10 @@ public interface JournalService {
 
     void updateJournalStatus(JournalEntity entry, CommandStatus status);
 
+    <R> void updateJournalPayload(JournalEntity entry, CommandDescriptor descriptor);
+
     Optional<JournalEntity> findByCommandId(String commandId);
 
-	List<JournalEntity> getAllEntries();
+    List<JournalEntity> getAllEntries();
 
 }

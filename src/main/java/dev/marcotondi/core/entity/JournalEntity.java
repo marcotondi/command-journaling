@@ -27,8 +27,6 @@ public class JournalEntity extends PanacheMongoEntity {
     public Document result;
     public String errorMessage;
 
-    public String sourceIp;
-    public String sessionId;
     public Map<String, String> metadata;
 
     public JournalEntity() { }

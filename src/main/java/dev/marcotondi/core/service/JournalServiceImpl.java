@@ -50,12 +50,12 @@ public class JournalServiceImpl implements JournalService {
         String commandId = descriptor.getCommandId().toString();
         CommandTypeName typeName = descriptor.getCommandType();
 
-        Document document = serializePayload(descriptor, commandId);
+        Document payload = serializePayload(descriptor, commandId);
 
         JournalEntity entry = new JournalEntity(
                 commandId,
                 typeName,
-                document,
+                payload,
                 LocalDateTime.now(),
                 status.name());
 
@@ -72,14 +72,15 @@ public class JournalServiceImpl implements JournalService {
             JournalEntity entry,
             R result,
             long durationMs) {
-        updateEntry(entry, CommandStatus.COMPLETED, durationMs, serializeResult(entry.commandId, result), null);
+        updateEntry(entry, CommandStatus.COMPLETED, null, durationMs,
+                serializeResult(entry.commandId, result), null);
     }
 
     @Override
     public void updateJournalOnFailure(
             JournalEntity entry,
             Exception e) {
-        updateEntry(entry, CommandStatus.FAILED, null, null, e.getMessage());
+        updateEntry(entry, CommandStatus.FAILED, null, null, null, e.getMessage());
     }
 
     @Override
@@ -87,19 +88,33 @@ public class JournalServiceImpl implements JournalService {
             JournalEntity entry,
             R result,
             long durationMs) {
-        updateEntry(entry, CommandStatus.ROLLED_BACK, durationMs, serializeResult(entry.commandId, result), null);
+        updateEntry(entry, CommandStatus.ROLLED_BACK, null, durationMs,
+                serializeResult(entry.commandId, result), null);
     }
 
     @Override
     public void updateJournalStatus(
             JournalEntity entry,
             CommandStatus status) {
-        updateEntry(entry, status, null, null, null);
+        updateEntry(entry, status, null, null, null, null);
+    }
+
+    @Override
+    public <R> void updateJournalPayload(
+            JournalEntity entry,
+            CommandDescriptor descriptor) {
+
+        updateEntry(
+                entry,
+                CommandStatus.EXECUTING,
+                serializePayload(descriptor, entry.commandId),
+                null, null, null);
     }
 
     private void updateEntry(
             JournalEntity entry,
             CommandStatus status,
+            Document payload,
             Long durationMs,
             Document result,
             String errorMessage) {
@@ -107,6 +122,9 @@ public class JournalServiceImpl implements JournalService {
         entry.status = status.name();
         entry.endTime = LocalDateTime.now();
 
+        if (payload != null) {
+            entry.payload = payload;
+        }
         if (durationMs != null) {
             entry.executionTimeMs = durationMs;
         }
