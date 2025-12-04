@@ -2,7 +2,6 @@ package dev.marcotondi.application.composite;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.core.domain.CommandDescriptor;
 import dev.marcotondi.core.domain.CompositeDescriptor;
 
@@ -12,11 +11,11 @@ import dev.marcotondi.core.domain.CompositeDescriptor;
  */
 public class SimpleCompositeDescriptor extends CompositeDescriptor{
 
-    public SimpleCompositeDescriptor(CommandTypeName commandType, String actor, CommandDescriptor... descriptors) {
+    public SimpleCompositeDescriptor(String commandType, String actor, CommandDescriptor... descriptors) {
         super(commandType, actor, descriptors);
     }
 
-    public SimpleCompositeDescriptor(UUID commandId, LocalDateTime timestamp, CommandTypeName commandType, String actor, CommandDescriptor... descriptors) {
+    public SimpleCompositeDescriptor(UUID commandId, LocalDateTime timestamp, String commandType, String actor, CommandDescriptor... descriptors) {
         super(commandId, timestamp, commandType, actor, descriptors);
     }
 }

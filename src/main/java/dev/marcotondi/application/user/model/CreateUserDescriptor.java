@@ -2,8 +2,7 @@ package dev.marcotondi.application.user.model;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-
-import dev.marcotondi.core.api.CommandTypeName;
+import dev.marcotondi.application.CommandName;
 import dev.marcotondi.core.domain.CommandDescriptor;
 
 public class CreateUserDescriptor extends CommandDescriptor {
@@ -13,13 +12,13 @@ public class CreateUserDescriptor extends CommandDescriptor {
     private final String email;
 
     public CreateUserDescriptor(String actor, String username, String email) {
-        super(CommandTypeName.CREATE_USER, actor);
+        super(CommandName.CREATE_USER, actor);
 
         this.username = username;
         this.email = email;
     }
 
-    public CreateUserDescriptor(UUID commandId, LocalDateTime timestamp, CommandTypeName commandType, String actor, String username, String email) {
+    public CreateUserDescriptor(UUID commandId, LocalDateTime timestamp, String commandType, String actor, String username, String email) {
         super(commandId, timestamp, commandType, actor);
 
         this.username = username;

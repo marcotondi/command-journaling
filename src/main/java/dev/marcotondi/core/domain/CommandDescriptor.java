@@ -4,8 +4,6 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import dev.marcotondi.core.api.CommandTypeName;
-
 /**
  * Base interface for all commands.
  * A command is an immutable data structure that represents a request to perform
@@ -17,17 +15,17 @@ public abstract class CommandDescriptor implements Serializable {
 
     private final UUID commandId;
     private final LocalDateTime timestamp;
-    private final CommandTypeName commandType;
+    private final String commandType;
     private final String actor;
 
-    public CommandDescriptor(CommandTypeName commandType, String actor) {
+    public CommandDescriptor(String commandType, String actor) {
         this.commandId = UUID.randomUUID();
         this.timestamp = LocalDateTime.now();
         this.commandType = commandType;
         this.actor = actor;
     }
 
-    public CommandDescriptor(UUID commandId, LocalDateTime timestamp, CommandTypeName commandType, String actor) {
+    public CommandDescriptor(UUID commandId, LocalDateTime timestamp, String commandType, String actor) {
         this.commandId = commandId;
         this.timestamp = timestamp;
         this.commandType = commandType;
@@ -38,7 +36,7 @@ public abstract class CommandDescriptor implements Serializable {
         return this.commandId.toString();
     }
 
-    public CommandTypeName getCommandType() {
+    public String getCommandType() {
         return this.commandType;
     }
 

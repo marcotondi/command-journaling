@@ -9,6 +9,6 @@ public interface ICommandFactory {
     <R> ICommand<R> buildCommand(CommandDescriptor descriptor);
 
     <R> ICommand<R> buildCommand(
-            CommandTypeName commandType,
+            String commandType,
             Map<String, Object> payloadMap);
 }

@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 
-import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.core.api.StatisticsService;
 import dev.marcotondi.core.entity.JournalEntity;
 import dev.marcotondi.core.repository.JournalRepository;
@@ -27,13 +26,13 @@ public class StatisticsServiceImpl implements StatisticsService {
 
         return entries.stream()
                 .collect(Collectors.groupingBy(
-                        entry -> entry.commandType.name(),
+                        entry -> entry.commandType,
                         Collectors.summingInt(entry -> 1)
                 ));
     }
 
     @Override
-    public Double getAverageExecutionTime(CommandTypeName commandType) {
+    public Double getAverageExecutionTime(String commandType) {
         List<JournalEntity> entries = journalRepository.find("commandType", commandType).list();
 
         return entries.stream()

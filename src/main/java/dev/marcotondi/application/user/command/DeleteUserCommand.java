@@ -5,11 +5,10 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.jboss.logging.Logger;
-
+import dev.marcotondi.application.CommandName;
 import dev.marcotondi.application.user.model.DeleteUserDescriptor;
 import dev.marcotondi.application.user.repository.UserRepository;
 import dev.marcotondi.core.api.CommandType;
-import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.core.domain.Command;
 import dev.marcotondi.core.domain.CommandDescriptor;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -17,7 +16,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 @ApplicationScoped
-@CommandType("DELETE_USER")
+@CommandType(CommandName.DELETE_USER)
 public class DeleteUserCommand extends Command<String> {
     private static final Logger LOG = Logger.getLogger(DeleteUserCommand.class);
 
@@ -51,7 +50,7 @@ public class DeleteUserCommand extends Command<String> {
         var descriptor = new DeleteUserDescriptor(
                 UUID.fromString((String) payload.get("commandId")),
                 LocalDateTime.parse((String) payload.get("timestamp")),
-                CommandTypeName.DELETE_USER,
+                CommandName.DELETE_USER,
                 (String) payload.get("actor"),
                 (String) payload.get("email"));
 

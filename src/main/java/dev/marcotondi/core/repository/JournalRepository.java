@@ -13,7 +13,6 @@ import com.mongodb.client.MongoCollection;
 
 import dev.marcotondi.core.entity.JournalEntity;
 import dev.marcotondi.core.CommandStatus;
-import dev.marcotondi.core.api.CommandTypeName;
 import io.quarkus.mongodb.panache.PanacheMongoRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -30,8 +29,8 @@ public class JournalRepository implements PanacheMongoRepository<JournalEntity> 
     // ------------------------------------------------------------
     // Query by properties
     // ------------------------------------------------------------
-    public List<JournalEntity> findByCommandType(CommandTypeName commandType) {
-        return find("commandType", commandType.name()).list();
+    public List<JournalEntity> findByCommandType(String commandType) {
+        return find("commandType", commandType).list();
     }
 
     public List<JournalEntity> findFailedCommands() {
@@ -72,10 +71,10 @@ public class JournalRepository implements PanacheMongoRepository<JournalEntity> 
         return stats;
     }
 
-    public double getAverageExecutionTime(CommandTypeName commandType) {
+    public double getAverageExecutionTime(String commandType) {
         List<Document> pipeline = Arrays.asList(
                 new Document("$match",
-                        new Document("commandType", commandType.name())
+                        new Document("commandType", commandType)
                                 .append("status", CommandStatus.COMPLETED.name())),
                 new Document("$group",
                         new Document("_id", null)

@@ -5,19 +5,18 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.jboss.logging.Logger;
-
+import dev.marcotondi.application.CommandName;
 import dev.marcotondi.application.user.model.CreateUserDescriptor;
 import dev.marcotondi.application.user.model.User;
 import dev.marcotondi.application.user.repository.UserRepository;
 import dev.marcotondi.core.api.CommandType;
-import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.core.domain.Command;
 import dev.marcotondi.core.domain.CommandDescriptor;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
-@CommandType("CREATE_USER")
+@CommandType(CommandName.CREATE_USER)
 public class CreateUserCommand extends Command<String> {
     private static final Logger LOG = Logger.getLogger(CreateUserCommand.class);
 
@@ -57,7 +56,7 @@ public class CreateUserCommand extends Command<String> {
         var descriptor = new CreateUserDescriptor(
                 UUID.fromString((String) payload.get("commandId")),
                 LocalDateTime.parse((String) payload.get("timestamp")),
-                CommandTypeName.CREATE_USER,
+                CommandName.CREATE_USER,
                 (String) payload.get("actor"),
                 (String) payload.get("username"),
                 (String) payload.get("email"));

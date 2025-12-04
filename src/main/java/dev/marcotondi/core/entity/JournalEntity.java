@@ -7,7 +7,6 @@ import org.bson.Document;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-import dev.marcotondi.core.api.CommandTypeName;
 import io.quarkus.mongodb.panache.PanacheMongoEntity;
 import io.quarkus.mongodb.panache.common.MongoEntity;
 
@@ -16,7 +15,7 @@ import io.quarkus.mongodb.panache.common.MongoEntity;
 public class JournalEntity extends PanacheMongoEntity {
 
     public String commandId;
-    public CommandTypeName commandType;
+    public String commandType;
     public Document payload;
     public String status;
 
@@ -33,7 +32,7 @@ public class JournalEntity extends PanacheMongoEntity {
 
     public JournalEntity(
             String commandId,
-            CommandTypeName commandType,
+            String commandType,
             Document payload,
             LocalDateTime startTime,
             String status) {

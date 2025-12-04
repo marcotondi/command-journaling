@@ -5,16 +5,15 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.jboss.logging.Logger;
-
+import dev.marcotondi.application.CommandName;
 import dev.marcotondi.application.sleep.model.SleepDescriptor;
 import dev.marcotondi.core.api.CommandType;
-import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.core.domain.Command;
 import dev.marcotondi.core.domain.CommandDescriptor;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-@CommandType("SLEEP")
+@CommandType(CommandName.SLEEP)
 public class SleepCommand extends Command<String> {
     private static final Logger LOG = Logger.getLogger(SleepCommand.class);
 
@@ -44,7 +43,7 @@ public class SleepCommand extends Command<String> {
         var descriptor = new SleepDescriptor(
                 UUID.fromString((String) payload.get("commandId")),
                 LocalDateTime.parse((String) payload.get("timestamp")),
-                CommandTypeName.DELETE_USER,
+                CommandName.SLEEP,
                 (String) payload.get("actor"),
                 (Integer) payload.get("seconds"));
 

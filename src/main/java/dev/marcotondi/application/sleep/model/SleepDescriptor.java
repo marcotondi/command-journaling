@@ -2,8 +2,7 @@ package dev.marcotondi.application.sleep.model;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-
-import dev.marcotondi.core.api.CommandTypeName;
+import dev.marcotondi.application.CommandName;
 import dev.marcotondi.core.domain.CommandDescriptor;
 
 /**
@@ -16,12 +15,12 @@ public class SleepDescriptor extends CommandDescriptor {
     private final int seconds;
 
     public SleepDescriptor(String actor, int seconds) {
-        super(CommandTypeName.SLEEP, actor);
+        super(CommandName.SLEEP, actor);
 
         this.seconds = seconds;
     }
 
-    public SleepDescriptor(UUID commandId, LocalDateTime timestamp, CommandTypeName commandType, String actor, int seconds) {
+    public SleepDescriptor(UUID commandId, LocalDateTime timestamp, String commandType, String actor, int seconds) {
         super(commandId, timestamp, commandType, actor);
 
         this.seconds = seconds;

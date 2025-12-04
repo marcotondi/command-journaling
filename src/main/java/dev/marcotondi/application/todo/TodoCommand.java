@@ -5,22 +5,20 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.logging.Logger;
-
+import dev.marcotondi.application.CommandName;
 import dev.marcotondi.application.todo.client.TodoRestClient;
 import dev.marcotondi.application.todo.entity.TodoEntity;
 import dev.marcotondi.application.todo.model.TodoDescriptor;
 import dev.marcotondi.core.api.CommandType;
-import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.core.domain.Command;
 import dev.marcotondi.core.domain.CommandDescriptor;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
-@CommandType("TODO")
+@CommandType(CommandName.TODO_RC)
 public class TodoCommand extends Command<List<TodoEntity>> {
 
     private static final Logger LOG = Logger.getLogger(TodoCommand.class);
@@ -63,7 +61,7 @@ public class TodoCommand extends Command<List<TodoEntity>> {
         var descriptor = new TodoDescriptor(
                 UUID.fromString((String) payload.get("commandId")),
                 LocalDateTime.parse((String) payload.get("timestamp")),
-                CommandTypeName.TODO,
+                CommandName.TODO_RC,
                 (String) payload.get("actor"));
 
         if (payload.containsKey("todoId")) {

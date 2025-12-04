@@ -6,5 +6,5 @@ import java.util.Map;
 public interface StatisticsService {
     Map<String, Integer> getCommandStatistics(LocalDateTime fromDate, LocalDateTime toDate);
 
-    Double getAverageExecutionTime(CommandTypeName commandType);
+    Double getAverageExecutionTime(String commandType);
 }

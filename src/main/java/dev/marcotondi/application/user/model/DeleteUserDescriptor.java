@@ -2,8 +2,7 @@ package dev.marcotondi.application.user.model;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-
-import dev.marcotondi.core.api.CommandTypeName;
+import dev.marcotondi.application.CommandName;
 import dev.marcotondi.core.domain.CommandDescriptor;
 
 /**
@@ -15,12 +14,12 @@ public class DeleteUserDescriptor extends CommandDescriptor {
     private final String email;
 
     public DeleteUserDescriptor(String actor, String email) {
-        super(CommandTypeName.DELETE_USER, actor);
+        super(CommandName.DELETE_USER, actor);
 
         this.email = email;
     }
 
-    public DeleteUserDescriptor(UUID commandId, LocalDateTime timestamp, CommandTypeName commandType, String actor,
+    public DeleteUserDescriptor(UUID commandId, LocalDateTime timestamp, String commandType, String actor,
             String email) {
         super(commandId, timestamp, commandType, actor);
 

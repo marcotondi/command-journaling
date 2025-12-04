@@ -6,7 +6,6 @@ import java.util.Map;
 import org.jboss.logging.Logger;
 
 import dev.marcotondi.core.api.CommandType;
-import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.core.api.ICommand;
 import dev.marcotondi.core.api.ICommandFactory;
 import dev.marcotondi.core.domain.Command;
@@ -25,20 +24,6 @@ public class CommandFactoryImpl implements ICommandFactory {
     @Inject
     Instance<ICommand<?>> commandPrototypes;
 
-    // private Map<CommandTypeName, Command<?>> commandInstanceMap;
-    // private Map<String, Class<? extends Command<?>>> commandClassMap;
-    // void onStart(@Observes StartupEvent ev) {
-    // commandInstanceMap = commandPrototypes.stream()
-    // .filter(cmd -> getBeanClass(cmd).isAnnotationPresent(CommandType.class))
-    // .collect(Collectors.toMap(
-    // cmd -> getBeanClass(cmd).getAnnotation(CommandType.class).value(),
-    // cmd -> cmd
-    // ));
-    // LOG.infof("Initialized Command Registry with %d providers: %s",
-    // commandClassMap.size(),
-    // commandClassMap.keySet());
-    // }
-
     @Override
     public <R> ICommand<R> buildCommand(CommandDescriptor descriptor) {
 
@@ -54,7 +39,7 @@ public class CommandFactoryImpl implements ICommandFactory {
 
     @Override
     public <R> ICommand<R> buildCommand(
-            CommandTypeName commandType,
+            String commandType,
             Map<String, Object> payload) {
 
         String typeCommand = payload.containsKey("descriptors") ? "COMPOSITE" : "SIMPLE";
@@ -65,9 +50,6 @@ public class CommandFactoryImpl implements ICommandFactory {
             command = buildCompositeCommand(commandType, payload);
         else
             command = buildSingleCommand(commandType, payload);
-
-        // Command<R> command = (Command<R>) createCommandInstance(commandType);
-        // command.setDescriptor(payload);
 
         return command;
     }
@@ -88,7 +70,7 @@ public class CommandFactoryImpl implements ICommandFactory {
     }
 
     private <R> ICommand<R> buildCompositeCommand(
-            CommandTypeName commandType,
+            String commandType,
             Map<String, Object> payload) {
 
     var composite = (CommandComposite) createCommandInstance(commandType);
@@ -99,7 +81,7 @@ public class CommandFactoryImpl implements ICommandFactory {
 
     if (descriptors != null) {
         for (Map<String, Object> descriptor : descriptors) {
-            CommandTypeName subCommandType =  CommandTypeName.valueOf((String) descriptor.get("commandType"));
+            String subCommandType = (String) descriptor.get("commandType");
             ICommand<R> command = buildSingleCommand(subCommandType, descriptor);
             composite.addCommand(command);
 
@@ -120,7 +102,7 @@ public class CommandFactoryImpl implements ICommandFactory {
     }
 
     private <R> ICommand<R> buildSingleCommand(
-            CommandTypeName commandType,
+            String commandType,
             Map<String, Object> payload) {
 
         Command<R> command = (Command<R>) createCommandInstance(commandType);
@@ -129,13 +111,13 @@ public class CommandFactoryImpl implements ICommandFactory {
         return command;
     }
 
-    private <R> ICommand<R> createCommandInstance(CommandTypeName commandType) {
-        LOG.infof("Searching for Command annotated with type %s", commandType.name());
+    private <R> ICommand<R> createCommandInstance(String commandType) {
+        LOG.infof("Searching for Command annotated with type %s", commandType);
 
         return commandPrototypes.stream()
                 .filter(cmd -> getBeanClass(cmd).isAnnotationPresent(CommandType.class))
                 .filter(cmd -> getBeanClass(cmd).getAnnotation(CommandType.class).value()
-                        .equals(commandType.name()))
+                        .equals(commandType))
                 .findFirst()
                 .map(cmd -> (ICommand<R>) cmd)
                 .orElseThrow(() -> new IllegalArgumentException(
@@ -149,14 +131,4 @@ public class CommandFactoryImpl implements ICommandFactory {
         }
         return beanClass;
     }
-
-    // private <R> Command<R> createCommandInstance(CommandTypeName commandType) {
-    // Command<R> command = (Command<R>) commandInstanceMap.get(commandType);
-    // if (command == null) {
-    // throw new IllegalStateException("No provider found for command type: " +
-    // commandType.name());
-    // }
-    // return command;
-    // }
-
 }

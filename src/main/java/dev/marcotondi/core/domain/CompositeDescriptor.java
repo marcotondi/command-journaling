@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.UUID;
-import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.core.api.ICommand;
 
 public abstract class CompositeDescriptor extends CommandDescriptor {
@@ -15,7 +14,7 @@ public abstract class CompositeDescriptor extends CommandDescriptor {
     private Queue<ICommand<?>> executeCommand;
 
     public CompositeDescriptor(
-            CommandTypeName commandType,
+            String commandType,
             String actor,
             CommandDescriptor... descriptors) {
 
@@ -27,7 +26,7 @@ public abstract class CompositeDescriptor extends CommandDescriptor {
     public CompositeDescriptor(
             UUID commandId,
             LocalDateTime timestamp,
-            CommandTypeName commandType,
+            String commandType,
             String actor,
             CommandDescriptor... descriptors) {
 

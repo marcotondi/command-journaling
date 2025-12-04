@@ -11,7 +11,6 @@ import org.jboss.logging.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.marcotondi.core.CommandStatus;
-import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.core.api.JournalService;
 import dev.marcotondi.core.domain.CommandDescriptor;
 import dev.marcotondi.core.entity.JournalEntity;
@@ -48,7 +47,7 @@ public class JournalServiceImpl implements JournalService {
             CommandStatus status) {
 
         String commandId = descriptor.getCommandId().toString();
-        CommandTypeName typeName = descriptor.getCommandType();
+        String typeName = descriptor.getCommandType();
 
         Document payload = serializePayload(descriptor, commandId);
 

@@ -3,7 +3,6 @@ package dev.marcotondi.application.resource;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.core.api.StatisticsService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -38,8 +37,7 @@ public class StatisticsResource {
     @Path("/avg-time/{commandType}")
     public Response getAverageTime(@PathParam("commandType") String commandTypeString) {
 
-        CommandTypeName commandType = CommandTypeName.valueOf(commandTypeString.toUpperCase());
-        String avg = statisticsService.getAverageExecutionTime(commandType) + " ms";
+        String avg = statisticsService.getAverageExecutionTime(commandTypeString.toUpperCase()) + " ms";
         AverageTimeResponse response = new AverageTimeResponse(commandTypeString, avg);
 
         return Response.ok()

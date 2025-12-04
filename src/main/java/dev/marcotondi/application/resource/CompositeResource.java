@@ -5,7 +5,6 @@ import org.jboss.logging.Logger;
 import dev.marcotondi.application.composite.SimpleCompositeDescriptor;
 import dev.marcotondi.application.sleep.model.SleepDescriptor;
 import dev.marcotondi.application.user.model.CreateUserDescriptor;
-import dev.marcotondi.core.api.CommandTypeName;
 import dev.marcotondi.core.api.ICommand;
 import dev.marcotondi.core.api.ICommandFactory;
 import dev.marcotondi.core.api.ICommandManager;
@@ -36,13 +35,13 @@ public class CompositeResource {
 
         ICommand<?> composite = commandFactory
                 .buildCommand(new SimpleCompositeDescriptor(
-                        CommandTypeName.SIMPLE_COMPOSITE,
+                        "SIMPLE_COMPOSITE",
                         "system",
                         new CommandDescriptor[] {
                                 new SleepDescriptor("system", 5),
                                 new CreateUserDescriptor("system", "marco", "marco@email.dev")}));
 
-        manager.dispatch(composite);
+        manager.dispatchAsync(composite);
 
         return Response.accepted()
                 .location(URI.create("/api/journal/" + composite.getDescriptor().getCommandId()))
