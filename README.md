@@ -1,88 +1,101 @@
 # Command Journaling
-## Implementazione del Command Pattern in Quarkus
 
-Questo progetto fornisce un’implementazione di riferimento del **Command Pattern** in un’applicazione Quarkus, basata su un’architettura pulita e robusta che integra journaling, recupero automatico dei comandi e idempotenza, garantendo così un sistema resiliente e facilmente manutenibile.
+## An Advanced Command Pattern Implementation with Quarkus
 
-## Architettura
+This project showcases an advanced implementation of the **Command Pattern** built on Quarkus, designed for robust, traceable, and maintainable applications. It leverages concepts like command journaling, automatic recovery, idempotency, and composite commands to provide a solid foundation for distributed and asynchronous systems.
 
-Il codice sorgente è organizzato in package basati sui layer architetturali, promuovendo una chiara separazione delle responsabilità:
+The architecture clearly separates the intention of an action (the _command descriptor_) from its execution logic (the _command_ itself), enhancing decoupling and extensibility.
 
-- **`api`**: Contiene i controller REST (*Resource). Questo è il livello più esterno, che gestisce le richieste HTTP e funge da punto di ingresso all'applicazione.
-- **`application`**: Contiene la logica applicativa e i casi d'uso. La suddivisione in command e model è un'ottima pratica. Qui risiedono le azioni che l'applicazione può compiere.
-- **`domain`**: È il cuore dell'applicazione. Contiene le entità e le regole di business principali (Command, CommandHandler, JournalEntry). Questo package non dipende da nessun altro strato dell'applicazione, principio chiave delle architetture pulite.
-- **`infra`**: Contiene le implementazioni tecniche di interfacce definite nel dominio (come i Repository) e tutto ciò che riguarda l'infrastruttura (database, logging, metriche).
-- **`service`**: Contiene servizi che orchestrano operazioni, specialmente per le query (JournalService, StatisticsService), fungendo da ponte tra l'API e l'infrastruttura.
+## Architecture Highlights
 
-## Funzionalità
+The project's architecture is structured around two main modules:
 
-- **Command Pattern**: Separa la richiesta di un'azione (il **Comando**) dalla sua esecuzione (l'**Handler**), migliorando la coesione e l'organizzazione del codice.
-- **Journaling**: Ogni comando eseguito viene registrato su MongoDB. Questo fornisce una traccia di audit completa e costituisce la base per il recupero e le analytics.
-- **Recupero Automatico**: All'avvio, l'applicazione recupera e riesegue automaticamente i comandi interrotti (ad esempio, a causa di un crash), garantendo la consistenza dei dati (`at-least-once delivery`).
-- **Idempotenza**: Gli handler dei comandi sono progettati per essere idempotenti. Eseguire lo stesso comando più volte (ad esempio durante il recupero) non produce effetti collaterali indesiderati.
+### 1. `core` Module
+
+This module encapsulates the foundational framework components and core interfaces, promoting a clean separation of concerns. Key elements include:
+
+- **Command Descriptor (`CommandDescriptor`)**: An immutable, serializable DTO representing the intent to execute an action.
+- **Command (`ICommand` / `Command`)**: The object containing the actual business logic to be executed.
+- **Command Factory (`ICommandFactory`)**: A centralized builder for command objects based on their descriptors.
+- **Command Manager (`ICommandManager`)**: Orchestrates command execution, handling journaling and state transitions.
+- **Journaling (`JournalService` & `JournalRepository`)**: Records all command executions and their state changes for auditability and recovery.
+- **Automatic Recovery (`CommandRecoveryService`)**: Ensures system consistency by re-executing pending commands after failures.
+- **Composite Commands (`CommandComposite`)**: Enables grouping multiple commands into a single, transactional unit.
+
+### 2. `application` Module
+
+This module contains concrete, application-specific implementations of commands, resources, and domain models, built upon the `core` framework. Examples include:
+
+- User management commands (`CreateUserCommand`, `DeleteUserCommand`)
+- Todo list operations (`TodoCommand`)
+- Sleep commands (`SleepCommand`)
+- Specific composite command implementations
+
+## Key Features
+
+- **Decoupling**: Clear separation between command definition (`Descriptor`) and execution (`Command`).
+- **Comprehensive Journaling**: Full audit trail of all actions and state changes.
+- **Automatic Recovery**: Guarantees system consistency by handling interrupted operations.
+- **Idempotency**: Commands are designed for safe re-execution without side effects.
+- **Composite Commands**: Orchestrates complex workflows as atomic transactions.
+- **Extensibility**: Easily add new commands by defining a descriptor and a command class.
 
 ## Getting Started
 
-1. Assicurarsi di avere Docker in esecuzione.
-2. Eseguire il seguente comando dalla root del progetto:
-   ```sh
-   ./mvnw quarkus:dev
-   ```
-3. Utilizzando **Quarkus Dev Services**, un'istanza di MongoDB verrà avviata e configurata automaticamente.
+1.  Ensure Docker is running (for MongoDB via Dev Services).
+2.  From the project root, execute:
+    ```sh
+    ./mvnw quarkus:dev
+    ```
+    Quarkus Dev Services will automatically start and configure a MongoDB instance.
 
-## Usage
+## Adding a New Command
 
-### 1. Invia un Comando di Creazione Utente
+The architecture is designed for easy extension:
 
-Usa `curl` per inviare un comando. Riceverai una risposta `HTTP 202 Accepted` che indica che il comando è stato accettato per l'elaborazione.
+1.  **Create the Descriptor**: Define a new `class` extending `CommandDescriptor` in the `application` module (e.g., `application.user.model`).
 
-```sh
-curl -i -X POST http://localhost:8080/api/commands/users \
-  -H "Content-Type: application/json" \
-  -d '{"username": "marco", "email": "marco@example.com", "actor": "test-user"}'
-```
+    ```java
+    public class CreateUserDescriptor extends CommandDescriptor {
 
-### 2. Verifica l'Idempotenza
+    private final String username;
+    private final String email;
+        // ...
+    }
+    ```
 
-Esegui lo stesso comando una seconda volta. Noterai nei log dell'applicazione un messaggio che indica che l'operazione è stata saltata, poiché l'utente esiste già. Questo dimostra che il sistema è idempotente.
+2.  **Create the Command Class**: Implement the business logic in a new class extending `Command` within the `application` module.
+    ```java
+    @ApplicationScoped
+    public class CreateUserCommand extends Command<String> {
+        @Override
+        protected String doExecute() {
+            // ... implement user creation logic here
+            return "User created";
+        }
+    }
+    ```
+3.  **Expose via API (Optional)**: If needed, add an endpoint in a `Resource` class in the `application` module to trigger your new command.
 
-### 3. Controlla il Journal
+The `CommandFactory` will automatically discover and use new commands based on naming conventions, requiring no manual modification to the core.
 
-Per vedere la traccia di tutti i comandi eseguiti, interroga l'endpoint del journal:
+## API Endpoints (Examples)
 
-```sh
-curl http://localhost:8080/api/journal | jq
-```
+- `POST /api/commands` - Executes a generic `CommandDescriptor`.
+- `POST /api/composites/{name}` - Executes a predefined composite command.
+- `GET /api/journal` - Retrieves all journal entries.
+- `GET /api/journal/{commandId}` - Retrieves a specific journal entry.
+- `GET /api/statistics/commands` - Provides command execution statistics.
 
-Vedrai le entry per entrambi i comandi, entrambe con stato `COMPLETED`, ma con risultati diversi a dimostrazione dell'idempotenza.
+## Requirements
 
-## Aggiungere Nuovi Comandi
-
-L'architettura è pensata per essere estensibile. Per aggiungere un nuovo comando, segui questi 3 passi:
-
-1. **Crea il Record del Comando**: Definisci un nuovo `record` che implementa `Command` nel package `application`.
-2. **Crea l'Handler del Comando**: Implementa la logica di business in una nuova classe che implementa `CommandHandler` nel package `application`.
-3. **Crea l'Endpoint API**: Aggiungi un metodo in una delle classi nel package `api` per creare e dispatchare il nuovo comando.
-
-Il `CommandDispatcher` rileverà e registrerà automaticamente il nuovo handler senza richiedere modifiche.
-
-## API Endpoints
-
-- `POST /api/commands/users` - Accetta un comando per creare un nuovo utente
-- `GET /api/journal` - Mostra tutte le entry nel journal dei comandi
-- `GET /api/journal/{commandId}` - Mostra una specifica entry nel journal
-- `GET /api/statistics/commands` - Fornisce statistiche sul numero di comandi eseguiti per tipo
-- `GET /api/statistics/avg-time/{type}` - Calcola il tempo medio di esecuzione per un tipo di comando
-- `GET /q/health` - Endpoint per health check
-
-## Requisiti
-
-- Java 21 
+- Java 21
 - Maven 3.8+
-- Docker (per MongoDB tramite Dev Services)
+- Docker (for MongoDB via Dev Services)
 
-## Tecnologie
+## Technologies
 
 - Quarkus
-- MongoDB
+- MongoDB (with Panache)
 - Jakarta CDI
-- RESTEasy Reactive
+- REST (JAX-RS)
