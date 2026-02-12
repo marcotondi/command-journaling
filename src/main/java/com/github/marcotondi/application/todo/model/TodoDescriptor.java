@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.github.marcotondi.application.CommandName;
-import com.github.marcotondi.core.UtilityCommand;
+import com.github.marcotondi.core.CoreKeys;
 import com.github.marcotondi.core.domain.CommandDescriptor;
 
 public class TodoDescriptor extends CommandDescriptor {
@@ -12,7 +12,7 @@ public class TodoDescriptor extends CommandDescriptor {
 
 
     public TodoDescriptor() {
-        super(CommandName.TODO_RC, UtilityCommand.SYSTEM_ACTOR);
+        super(CommandName.TODO_RC, CoreKeys.SYSTEM_ACTOR);
     }
 
     public TodoDescriptor(UUID commandId, LocalDateTime timestamp, String commandType, String actor) {

@@ -2,13 +2,13 @@ package com.github.marcotondi.core.domain;
 
 import java.time.LocalDateTime;
 import java.util.ArrayDeque;
-import java.util.Queue;
+import java.util.Deque;
 import java.util.UUID;
 
 public abstract class CompositeDescriptor extends CommandDescriptor {
     private static final long serialVersionUID = 8253349985L;
 
-    private Queue<String> executeCommandId;
+    private Deque<String> executeCommandId;
 
     public CompositeDescriptor(
             String commandType,
@@ -28,7 +28,7 @@ public abstract class CompositeDescriptor extends CommandDescriptor {
         this.executeCommandId = new ArrayDeque<>();
     }
 
-    public Queue<String> getExecuteCommandId() {
+    public Deque<String> getExecuteCommandId() {
         return this.executeCommandId;
     }
 

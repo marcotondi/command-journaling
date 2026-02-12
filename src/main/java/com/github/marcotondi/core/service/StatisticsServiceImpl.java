@@ -6,21 +6,17 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 
+import com.github.marcotondi.core.CoreKeys;
 import com.github.marcotondi.core.api.StatisticsService;
 import com.github.marcotondi.core.entity.JournalEntity;
-import com.github.marcotondi.core.repository.JournalRepository;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class StatisticsServiceImpl implements StatisticsService {
 
-    @Inject
-    JournalRepository journalRepository;
-
     @Override
     public Map<String, Integer> getCommandStatistics(LocalDateTime fromDate, LocalDateTime toDate) {
-        List<JournalEntity> entries = journalRepository
+        List<JournalEntity> entries = JournalEntity
             .find("startTime >= ?1 and startTime <= ?2", fromDate, toDate)
             .list();
 
@@ -33,7 +29,7 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     @Override
     public Double getAverageExecutionTime(String commandType) {
-        List<JournalEntity> entries = journalRepository.find("commandType", commandType).list();
+        List<JournalEntity> entries = JournalEntity.find(CoreKeys.COMMAND_TYPE, commandType).list();
 
         return entries.stream()
                 .filter(entry -> entry.executionTimeMs != null)

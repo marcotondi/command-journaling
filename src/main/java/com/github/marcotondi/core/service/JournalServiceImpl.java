@@ -1,6 +1,7 @@
 package com.github.marcotondi.core.service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -14,19 +15,18 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.github.marcotondi.core.CommandStatus;
+import com.github.marcotondi.core.JournalResponse;
 import com.github.marcotondi.core.api.JournalService;
 import com.github.marcotondi.core.domain.CommandDescriptor;
 import com.github.marcotondi.core.entity.JournalEntity;
-import com.github.marcotondi.core.repository.JournalRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.NotFoundException;
 
 @ApplicationScoped
 public class JournalServiceImpl implements JournalService {
     private static final Logger LOG = Logger.getLogger(JournalServiceImpl.class);
-
-    @Inject
-    JournalRepository repository;
 
     @Inject
     ObjectMapper objectMapper;
@@ -36,6 +36,7 @@ public class JournalServiceImpl implements JournalService {
     // ------------------------------------------------------------
 
     @Override
+    @Transactional
     public JournalEntity getOrCreateEntry(
             CommandDescriptor descriptor) {
 
@@ -44,6 +45,7 @@ public class JournalServiceImpl implements JournalService {
     }
 
     @Override
+    @Transactional
     public JournalEntity getOrCreateEntry(
             CommandDescriptor descriptor,
             CommandDescriptor[] commandDescriptors) {
@@ -53,6 +55,7 @@ public class JournalServiceImpl implements JournalService {
     }
 
     @Override
+    @Transactional
     public JournalEntity createJournalEntity(
             CommandDescriptor descriptor,
             CommandDescriptor[] commandDescriptors) {
@@ -68,10 +71,10 @@ public class JournalServiceImpl implements JournalService {
                 typeName,
                 payload,
                 commands,
-                LocalDateTime.now(),
-                CommandStatus.PENDING.name());
+                LocalDateTime.now(ZoneOffset.UTC),
+                CommandStatus.PENDING);
 
-        repository.persist(entry);
+        entry.persist();
         return entry;
     }
 
@@ -80,6 +83,7 @@ public class JournalServiceImpl implements JournalService {
     // ------------------------------------------------------------
 
     @Override
+    @Transactional
     public <R> void updateJournalOnSuccess(
             JournalEntity entry,
             R result,
@@ -89,6 +93,7 @@ public class JournalServiceImpl implements JournalService {
     }
 
     @Override
+    @Transactional
     public void updateJournalOnFailure(
             JournalEntity entry,
             Exception e) {
@@ -96,6 +101,7 @@ public class JournalServiceImpl implements JournalService {
     }
 
     @Override
+    @Transactional
     public <R> void updateJournalOnRollBack(
             JournalEntity entry,
             R result,
@@ -105,6 +111,7 @@ public class JournalServiceImpl implements JournalService {
     }
 
     @Override
+    @Transactional
     public void updateJournalStatus(
             JournalEntity entry,
             CommandStatus status) {
@@ -112,6 +119,7 @@ public class JournalServiceImpl implements JournalService {
     }
 
     @Override
+    @Transactional
     public <R> void updateJournalPayload(
             JournalEntity entry,
             CommandDescriptor descriptor) {
@@ -131,9 +139,6 @@ public class JournalServiceImpl implements JournalService {
             Document result,
             String errorMessage) {
 
-        entry.status = status.name();
-        entry.endTime = LocalDateTime.now();
-
         if (payload != null) {
             entry.payload = payload;
         }
@@ -143,11 +148,12 @@ public class JournalServiceImpl implements JournalService {
         if (result != null) {
             entry.result = result;
         }
-        if (errorMessage != null) {
-            entry.errorMessage = errorMessage;
-        }
 
-        repository.update(entry);
+        entry.status = status;
+        entry.errorMessage = errorMessage;
+        entry.endTime = LocalDateTime.now(ZoneOffset.UTC);
+
+        entry.update();
     }
 
     // ------------------------------------------------------------
@@ -156,12 +162,25 @@ public class JournalServiceImpl implements JournalService {
 
     @Override
     public Optional<JournalEntity> findByCommandId(String commandId) {
-        return repository.findByCommandId(commandId);
+        return JournalEntity.findByCommandId(commandId);
+    }
+
+    @Override
+    public Optional<JournalEntity> findBySubCommandId(String subCommandId) {
+        return Optional.ofNullable(JournalEntity.findBySubCommandId(subCommandId));
     }
 
     @Override
     public List<JournalEntity> getAllEntries() {
-        return repository.listAll();
+        return JournalEntity.listAll();
+    }
+
+    @Override
+    public JournalResponse getJournalByCommandId(String commandId) {
+        var journal = JournalEntity.findByCommandId(commandId)
+                .orElseThrow(() -> new NotFoundException("Command not found: " + commandId));
+
+        return JournalResponse.from(journal);
     }
 
     // ------------------------------------------------------------
@@ -184,6 +203,11 @@ public class JournalServiceImpl implements JournalService {
     }
 
     private List<Document> serializePayload(CommandDescriptor[] array, String commandId) {
+        if (array == null) {
+            LOG.warnf("No command descriptors provided for journal entry %s", commandId);
+            return Collections.emptyList();
+        }
+
         try {
             List<Document> descriptors = objectMapper.convertValue(
                     array,
@@ -203,23 +227,24 @@ public class JournalServiceImpl implements JournalService {
     private <R> Document serializeResult(String commandId, R result) {
         try {
             // Se result è una stringa semplice, wrappala
-            if (result instanceof String) {
+            // Se è un array o Collection, wrappalo
+            if (result instanceof String || result instanceof Object[] || result instanceof Collection) {
                 return new Document("data", result);
             }
 
-            // Se è un array o Collection, wrappalo
-            if (result instanceof Object[] || result instanceof Collection) {
-                return new Document("data", result);
+            if (result instanceof Map map) {
+                return new Document(map);
             }
 
             // Altrimenti serializza come JSON e parsalo
             Map<String, Object> map = objectMapper.convertValue(result,
-                    new TypeReference<Map<String, Object>>() {});
+                    new TypeReference<Map<String, Object>>() {
+                    });
             return new Document(map);
 
         } catch (Exception e) {
             LOG.errorf(e, "Result serialization failed for command %s", commandId);
-            return new Document("error", "result serialization failed");
+            throw new RuntimeException("Cannot serialize payload for " + commandId, e);
         }
     }
 }

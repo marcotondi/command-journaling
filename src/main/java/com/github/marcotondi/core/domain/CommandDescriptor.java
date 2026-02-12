@@ -2,6 +2,7 @@ package com.github.marcotondi.core.domain;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 /**
@@ -11,7 +12,7 @@ import java.util.UUID;
  */
 public abstract class CommandDescriptor implements Serializable {
 
-    public static final int version = 1;
+    private static final long serialVersionUID = 1145285260L;
 
     private final UUID commandId;
     private final LocalDateTime timestamp;
@@ -20,7 +21,7 @@ public abstract class CommandDescriptor implements Serializable {
 
     public CommandDescriptor(String commandType, String actor) {
         this.commandId = UUID.randomUUID();
-        this.timestamp = LocalDateTime.now();
+        this.timestamp = LocalDateTime.now(ZoneOffset.UTC);
         this.commandType = commandType;
         this.actor = actor;
     }

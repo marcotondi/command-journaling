@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.github.marcotondi.core.CommandStatus;
+import com.github.marcotondi.core.JournalResponse;
 import com.github.marcotondi.core.domain.CommandDescriptor;
 import com.github.marcotondi.core.entity.JournalEntity;
 
@@ -27,6 +28,10 @@ public interface JournalService {
 
     Optional<JournalEntity> findByCommandId(String commandId);
 
+    Optional<JournalEntity> findBySubCommandId(String subCommandId);
+
     List<JournalEntity> getAllEntries();
+
+    JournalResponse getJournalByCommandId(String commandId);
 
 }

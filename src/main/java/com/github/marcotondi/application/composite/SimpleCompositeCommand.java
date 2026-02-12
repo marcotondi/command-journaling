@@ -1,6 +1,6 @@
 package com.github.marcotondi.application.composite;
 
-import static com.github.marcotondi.core.UtilityCommand.*;
+import static com.github.marcotondi.core.PayloadUtils.*;
 
 import java.util.Map;
 
@@ -8,13 +8,13 @@ import com.github.marcotondi.application.CommandName;
 import com.github.marcotondi.core.api.CommandType;
 import com.github.marcotondi.core.domain.CommandComposite;
 import com.github.marcotondi.core.domain.CommandDescriptor;
-import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Dependent;
 
 /**
  * An example composite command that demonstrates how to use CommandComposite.
  * This command executes a 'sleep' operation followed by creating a 'todo' item.
  */
-@ApplicationScoped
+@Dependent
 @CommandType(CommandName.SIMPLE_COMPOSITE)
 public class SimpleCompositeCommand extends CommandComposite<Void> {
 

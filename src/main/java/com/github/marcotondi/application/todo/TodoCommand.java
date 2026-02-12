@@ -11,14 +11,14 @@ import com.github.marcotondi.application.CommandName;
 import com.github.marcotondi.application.todo.client.TodoRestClient;
 import com.github.marcotondi.application.todo.entity.TodoEntity;
 import com.github.marcotondi.application.todo.model.TodoDescriptor;
-import com.github.marcotondi.core.UtilityCommand;
+import com.github.marcotondi.core.CoreKeys;
 import com.github.marcotondi.core.api.CommandType;
 import com.github.marcotondi.core.domain.Command;
 import com.github.marcotondi.core.domain.CommandDescriptor;
-import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
 
-@ApplicationScoped
+@Dependent
 @CommandType(CommandName.TODO_RC)
 public class TodoCommand extends Command<List<TodoEntity>> {
 
@@ -60,10 +60,10 @@ public class TodoCommand extends Command<List<TodoEntity>> {
     public CommandDescriptor setDescriptor(Map<String, Object> payload) {
 
         var descriptor = new TodoDescriptor(
-                UUID.fromString((String) payload.get(UtilityCommand.COMMAND_ID)),
-                LocalDateTime.parse((String) payload.get(UtilityCommand.TIMESTAMP)),
+                UUID.fromString((String) payload.get(CoreKeys.COMMAND_ID)),
+                LocalDateTime.parse((String) payload.get(CoreKeys.TIMESTAMP)),
                 CommandName.TODO_RC,
-                (String) payload.get(UtilityCommand.ACTOR));
+                (String) payload.get(CoreKeys.ACTOR));
 
         if (payload.containsKey("todoId")) {
             this.todoId = (Integer) payload.get("todoId");

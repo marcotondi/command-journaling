@@ -4,11 +4,11 @@ import java.util.List;
 
 import org.jboss.logging.Logger;
 
+import com.github.marcotondi.core.CoreKeys;
 import com.github.marcotondi.core.api.ICommand;
 import com.github.marcotondi.core.api.ICommandFactory;
 import com.github.marcotondi.core.api.ICommandManager;
 import com.github.marcotondi.core.entity.JournalEntity;
-import com.github.marcotondi.core.repository.JournalRepository;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -18,15 +18,11 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 class CommandRecoveryService {
     private static final Logger LOG = Logger.getLogger(CommandRecoveryService.class);
-    private static final String COMMANDS_PAYLOAD_KEY = "commands";
 
     @Inject
     ICommandManager manager;
     @Inject
     ICommandFactory commandFactory;
-
-    @Inject
-    JournalRepository journalRepository;
 
     void onStart(@Observes @Priority(Integer.MAX_VALUE) StartupEvent ev) {
         LOG.info("Starting recovery of interrupted commands...");
@@ -34,7 +30,7 @@ class CommandRecoveryService {
     }
 
     private void recoverInterruptedCommands() {
-        List<JournalEntity> interrupted = journalRepository.findInterruptedCommands();
+        List<JournalEntity> interrupted = JournalEntity.findInterruptedCommands();
         if (interrupted.isEmpty()) {
             LOG.info("No interrupted commands found. Recovery not needed.");
             return;
@@ -47,17 +43,20 @@ class CommandRecoveryService {
                     entry.commandId,
                     entry.commandType);
 
-            entry.payload.append(COMMANDS_PAYLOAD_KEY, entry.commands);
+            entry.payload.append(CoreKeys.COMMANDS_PAYLOAD_KEY, entry.commands);
 
-            ICommand<?> command = commandFactory
-                    .buildCommand(
-                            entry.commandType,
-                            entry.payload);
+            try {
+                ICommand<?> command = commandFactory
+                        .buildCommand(
+                                entry.commandType,
+                                entry.payload);
 
-            manager.dispatch(command);
+                manager.dispatch(command);
+                LOG.infof("Successfully recovered command ID: %s", entry.commandId);
 
-            LOG.infof("Successfully recovered command ID: %s", entry.commandId);
-
+            } catch (Exception e) {
+                LOG.errorf(e, "Failed to recover command ID: %s", entry.commandId);
+            }
         }
     }
 

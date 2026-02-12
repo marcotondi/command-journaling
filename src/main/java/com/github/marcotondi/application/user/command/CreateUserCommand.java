@@ -1,8 +1,8 @@
 package com.github.marcotondi.application.user.command;
 
-import static com.github.marcotondi.core.UtilityCommand.extractOrDefaultActor;
-import static com.github.marcotondi.core.UtilityCommand.extractOrGenerateTimestamp;
-import static com.github.marcotondi.core.UtilityCommand.extractOrGenerateUuid;
+import static com.github.marcotondi.core.PayloadUtils.extractOrDefaultActor;
+import static com.github.marcotondi.core.PayloadUtils.extractOrGenerateTimestamp;
+import static com.github.marcotondi.core.PayloadUtils.extractOrGenerateUuid;
 
 import java.util.Map;
 
@@ -14,10 +14,10 @@ import com.github.marcotondi.application.user.repository.UserRepository;
 import com.github.marcotondi.core.api.CommandType;
 import com.github.marcotondi.core.domain.Command;
 import com.github.marcotondi.core.domain.CommandDescriptor;
-import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
 
-@ApplicationScoped
+@Dependent
 @CommandType(CommandName.CREATE_USER)
 public class CreateUserCommand extends Command<String> {
     private static final Logger LOG = Logger.getLogger(CreateUserCommand.class);

@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.github.marcotondi.application.CommandName;
-import com.github.marcotondi.core.UtilityCommand;
+import com.github.marcotondi.core.CoreKeys;
 import com.github.marcotondi.core.domain.CompositeDescriptor;
 
 /**
@@ -14,7 +14,7 @@ import com.github.marcotondi.core.domain.CompositeDescriptor;
 public class SimpleCompositeDescriptor extends CompositeDescriptor {
 
     public SimpleCompositeDescriptor() {
-        super(CommandName.SIMPLE_COMPOSITE, UtilityCommand.SYSTEM_ACTOR);
+        super(CommandName.SIMPLE_COMPOSITE, CoreKeys.SYSTEM_ACTOR);
     }
 
     public SimpleCompositeDescriptor(UUID commandId, LocalDateTime timestamp, String commandType, String actor) {

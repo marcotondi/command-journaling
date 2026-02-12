@@ -9,7 +9,7 @@ import com.github.marcotondi.application.CommandName;
 import com.github.marcotondi.application.composite.SimpleCompositeDescriptor;
 import com.github.marcotondi.application.sleep.model.SleepDescriptor;
 import com.github.marcotondi.application.user.model.CreateUserDescriptor;
-import com.github.marcotondi.core.UtilityCommand;
+import com.github.marcotondi.core.CoreKeys;
 import com.github.marcotondi.core.api.ICommand;
 import com.github.marcotondi.core.api.ICommandFactory;
 import com.github.marcotondi.core.api.ICommandManager;
@@ -42,8 +42,8 @@ public class CompositeResource {
         ICommand<?> composite = commandFactory
                 .buildGroupCommand(new SimpleCompositeDescriptor(),
                         new CommandDescriptor[] {
-                                new SleepDescriptor(UtilityCommand.SYSTEM_ACTOR, 5),
-                                new CreateUserDescriptor(UtilityCommand.SYSTEM_ACTOR, "marco", "marco@email.dev") });
+                                new SleepDescriptor(CoreKeys.SYSTEM_ACTOR, 5),
+                                new CreateUserDescriptor(CoreKeys.SYSTEM_ACTOR, "marco", "marco@email.dev") });
 
         manager.dispatchAsync(composite);
 
@@ -57,7 +57,7 @@ public class CompositeResource {
     public Response createUserCompositeCommand() {
         LOG.info("create-user composite command ");
 
-        Map<String, Object> map = Map.of("actor", UtilityCommand.SYSTEM_ACTOR, "seconds", 10, "username", "marco", "email", "marco@email.dev");
+        Map<String, Object> map = Map.of("actor", CoreKeys.SYSTEM_ACTOR, "seconds", 10, "username", "marco", "email", "marco@email.dev");
 
         ICommand<?> composite = commandFactory
                 .buildCommand(

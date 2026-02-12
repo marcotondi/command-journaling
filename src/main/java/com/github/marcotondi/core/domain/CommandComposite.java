@@ -1,10 +1,11 @@
 package com.github.marcotondi.core.domain;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.jboss.logging.Logger;
 import com.github.marcotondi.core.CommandStatus;
 import com.github.marcotondi.core.api.ICommand;
@@ -36,7 +37,7 @@ public abstract class CommandComposite<R> implements ICommand<List<R>> {
 
         List<R> results = new ArrayList<>();
         journal.updateJournalStatus(entry, CommandStatus.EXECUTING);
-        LocalDateTime startTime = LocalDateTime.now();
+        long startNano = System.nanoTime();
 
         for (Command<R> command : commands) {
             LOG.debugf("Executing command: %s", command.getDescriptor().getCommandType());
@@ -55,12 +56,15 @@ public abstract class CommandComposite<R> implements ICommand<List<R>> {
                 journal.updateJournalOnFailure(entry, e);
 
                 throw new CommandExecutionException(
-                        "Execution failed for sub-command " + command.getClass().getSimpleName(),
+                        "Execution failed for sub-command " +
+                                command.getClass().getSimpleName(),
                         e);
             }
         }
-        long duration = Duration.between(startTime, LocalDateTime.now()).toMillis();
+        long duration = Duration.ofNanos(System.nanoTime() - startNano).toMillis();
         journal.updateJournalOnSuccess(entry, results, duration);
+
+        LOG.infof("Done command: %s", entry.commandId);
 
         return results;
     }
@@ -68,26 +72,48 @@ public abstract class CommandComposite<R> implements ICommand<List<R>> {
     @Override
     public List<R> undo() {
         List<R> results = new ArrayList<>();
-        for (String commandId : descriptor.getExecuteCommandId()) {
+        List<Exception> failures = new ArrayList<>();
+
+        var commandDescriptors = commandDescriptors();
+
+        JournalEntity entry = journal.getOrCreateEntry(
+                getDescriptor(),
+                commandDescriptors);
+
+        Iterator<String> it = descriptor.getExecuteCommandId().descendingIterator();
+        long startNano = System.nanoTime();
+
+        while (it.hasNext()) {
+            String commandId = it.next();
             LOG.debugf("Rollback command in: %s", commandId);
 
             Command<R> targetCommand = commands.stream()
-                .filter(cmd -> commandId.equals(commandId))
-                .findFirst()
-                .orElseThrow(() -> new CommandExecutionException(
-                    "Command not found for ID: " + commandId));
-
+                    .filter(cmd -> commandId.equals(cmd.getDescriptor().getCommandId()))
+                    .findFirst()
+                    .orElseThrow(() -> new CommandExecutionException(
+                            "Command not found for ID: " + commandId));
 
             try {
-                results.add(targetCommand.undo());
+                results.add(targetCommand.doUndo());
             } catch (Exception e) {
                 LOG.errorf(e, "Undo-Command execution failed for command ID %s", commandId);
-
-                throw new CommandExecutionException(
-                    "Execution failed for sub-command " + targetCommand.getClass().getSimpleName(),
-                    e);
-                }
+                failures.add(e);
+            }
         }
+
+        long durationMs = Duration.ofNanos(System.nanoTime() - startNano).toMillis();
+        journal.updateJournalOnRollBack(entry, results, durationMs);
+
+        if (!failures.isEmpty()) {
+            String details = failures.stream()
+                    .map(Exception::getMessage)
+                    .collect(Collectors.joining(", "));
+
+            throw new CommandExecutionException(
+                    "Partial rollback failure [" + failures.size() + " errors]: " + details,
+                    failures.get(0));
+        }
+
         return results;
     }
 
@@ -110,7 +136,6 @@ public abstract class CommandComposite<R> implements ICommand<List<R>> {
     public void addCommand(ICommand<R> command) {
         this.commands.add((Command<R>) command);
     }
-
 
     private CommandDescriptor[] commandDescriptors() {
         return commands.stream()

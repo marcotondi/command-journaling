@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.jboss.logging.Logger;
 
+import com.github.marcotondi.core.CoreKeys;
 import com.github.marcotondi.core.api.CommandType;
 import com.github.marcotondi.core.api.Commands;
 import com.github.marcotondi.core.api.ICommand;
@@ -20,12 +21,9 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
-@SuppressWarnings({ "unchecked", "rawtypes" })
+@SuppressWarnings({ "rawtypes", "unchecked" })
 public class CommandFactoryImpl implements ICommandFactory {
     private static final Logger LOG = Logger.getLogger(CommandFactoryImpl.class);
-
-    private static final String COMMANDS_PAYLOAD_KEY = "commands";
-    private static final String COMMAND_TYPE_PAYLOAD_KEY = "commandType";
 
     @Inject
     Instance<ICommand<?>> commandPrototypes;
@@ -67,7 +65,7 @@ public class CommandFactoryImpl implements ICommandFactory {
     private <R> ICommand<R> buildCompositeCommand(ICommand icommand, Map<String, Object> payload) {
         var compositeCommand = (CommandComposite) icommand;
 
-        Object commandsObj = payload.get(COMMANDS_PAYLOAD_KEY);
+        Object commandsObj = payload.get(CoreKeys.COMMANDS_PAYLOAD_KEY);
 
         if (commandsObj instanceof List commandDescriptors) {
             buildCommandsFromDescriptors(compositeCommand, commandDescriptors);
@@ -88,7 +86,7 @@ public class CommandFactoryImpl implements ICommandFactory {
         var compositeCommand = (CommandComposite) icommand;
 
         descriptors.forEach(descriptor -> {
-            String subCommandType = (String) descriptor.get(COMMAND_TYPE_PAYLOAD_KEY);
+            String subCommandType = (String) descriptor.get(CoreKeys.COMMAND_TYPE_PAYLOAD_KEY);
             if (subCommandType == null) {
                 LOG.warnf("Skipping descriptor without command type: %s", descriptor);
                 return;

@@ -1,7 +1,6 @@
 package com.github.marcotondi.core.domain;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.Map;
 
 import org.jboss.logging.Logger;
@@ -38,11 +37,11 @@ public abstract class Command<R> implements ICommand<R> {
 
             journal.updateJournalStatus(entry, CommandStatus.EXECUTING);
 
-            LocalDateTime startTime = LocalDateTime.now();
+            long startNano = System.nanoTime();
             R result = doExecute(); // This is the long-running part
-            long duration = Duration.between(startTime, LocalDateTime.now()).toMillis();
+            long executionTimeMs = Duration.ofNanos(System.nanoTime() - startNano).toMillis();
 
-            journal.updateJournalOnSuccess(entry, result, duration);
+            journal.updateJournalOnSuccess(entry, result, executionTimeMs);
 
             return result;
 
@@ -58,7 +57,7 @@ public abstract class Command<R> implements ICommand<R> {
     @Override
     public final R undo() {
 
-        String commandId = getDescriptor().getCommandId().toString();
+        String commandId = getDescriptor().getCommandId();
 
         JournalEntity entry = journal.findByCommandId(commandId)
                 .orElseThrow(() -> new IllegalStateException(
@@ -70,11 +69,11 @@ public abstract class Command<R> implements ICommand<R> {
 
             journal.updateJournalStatus(entry, CommandStatus.EXECUTING_ROLL_BACK);
 
-            LocalDateTime startTime = LocalDateTime.now();
+            long startNano = System.nanoTime();
             R result = doUndo();
-            long duration = Duration.between(startTime, LocalDateTime.now()).toMillis();
+            long executionTimeMs = Duration.ofNanos(System.nanoTime() - startNano).toMillis();
 
-            journal.updateJournalOnRollBack(entry, result, duration);
+            journal.updateJournalOnRollBack(entry, result, executionTimeMs);
 
             return result;
 
