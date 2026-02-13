@@ -37,7 +37,7 @@ This module contains concrete, application-specific implementations of commands,
 - **Comprehensive Journaling**: Full audit trail of all actions and state changes.
 - **Automatic Recovery**: Guarantees system consistency by handling interrupted operations.
 - **Idempotency**: Commands are designed for safe re-execution without side effects.
-- **Composite Commands**: Orchestrates complex workflows as atomic transactions.
+- **Composite Commands**: Orchestrates complex workflows as atomic transactions. If a step fails, the steps already executed are rolled back in reverse order. Sub-commands are journaled inside the composite entry (the `commands` list), not as standalone entries, so they are not individually retryable.
 - **Extensibility**: Easily add new commands by defining a descriptor and a command class.
 
 ## Getting Started
@@ -66,7 +66,8 @@ The architecture is designed for easy extension:
 
 2.  **Create the Command Class**: Implement the business logic in a new class extending `Command` within the `application` module.
     ```java
-    @ApplicationScoped
+    @Dependent
+    @CommandType(CommandName.CREATE_USER)
     public class CreateUserCommand extends Command<String> {
         @Override
         protected String doExecute() {
@@ -75,17 +76,35 @@ The architecture is designed for easy extension:
         }
     }
     ```
+
+    Use `@Dependent`: every command instance carries its own descriptor and, for composites, its own
+    sub-command list. A shared scope (`@ApplicationScoped`) would leak state across commands.
 3.  **Expose via API (Optional)**: If needed, add an endpoint in a `Resource` class in the `application` module to trigger your new command.
 
 The `CommandFactory` will automatically discover and use new commands based on naming conventions, requiring no manual modification to the core.
 
 ## API Endpoints (Examples)
 
-- `POST /api/commands` - Executes a generic `CommandDescriptor`.
-- `POST /api/composites/{name}` - Executes a predefined composite command.
-- `GET /api/journal` - Retrieves all journal entries.
+Commands:
+
+- `POST /api/commands/users/create` - Creates a user.
+- `POST /api/commands/users/delete` - Deletes a user.
+- `POST /api/commands/sleep` - Sleeps for N seconds.
+- `POST /api/commands/todo` - Calls the external todo service.
+- `POST /api/commands/composite/simple` - Runs the sample composite command.
+- `POST /api/commands/composite/create-user` - Runs the create-user composite command.
+
+Journal:
+
+- `GET /api/journal?page=0&size=50` - Retrieves a page of journal entries (most recent first).
 - `GET /api/journal/{commandId}` - Retrieves a specific journal entry.
-- `GET /api/statistics/commands` - Provides command execution statistics.
+- `GET /api/journal/sub-command/{subCommandId}` - Retrieves the entry owning a sub-command.
+- `POST /api/journal/restart` - Re-dispatches a `FAILED`/`PENDING` command by `commandId` (`409` otherwise).
+
+Statistics:
+
+- `GET /api/statistics/commands?from=&to=` - Command counts per type in a time range.
+- `GET /api/statistics/avg-time/{commandType}` - Average execution time for a command type.
 
 ## Requirements
 
