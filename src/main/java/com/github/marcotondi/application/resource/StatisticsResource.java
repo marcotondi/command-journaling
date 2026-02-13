@@ -22,7 +22,7 @@ public class StatisticsResource {
 
     @GET
     @Path("/commands")
-    public Map<String, Integer> getStatistics(
+    public Map<String, Long> getStatistics(
             @QueryParam("from") String from,
             @QueryParam("to") String to) {
         LocalDateTime fromDate = from != null ? LocalDateTime.parse(from) : LocalDateTime.now().minusDays(7);

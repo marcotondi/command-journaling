@@ -13,6 +13,7 @@ import com.github.marcotondi.application.sleep.model.SleepDescriptor;
 import com.github.marcotondi.core.api.CommandType;
 import com.github.marcotondi.core.domain.Command;
 import com.github.marcotondi.core.domain.CommandDescriptor;
+import com.github.marcotondi.core.domain.exception.CommandExecutionException;
 import jakarta.enterprise.context.Dependent;
 
 @Dependent
@@ -29,7 +30,7 @@ public class SleepCommand extends Command<String> {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             LOG.error("Sleep was interrupted", e);
-            return "Sleep was interrupted.";
+            throw new CommandExecutionException("Sleep was interrupted", e);
         }
 
         return "Sleep of " + ((SleepDescriptor) getDescriptor()).getSeconds() + " seconds completed.";

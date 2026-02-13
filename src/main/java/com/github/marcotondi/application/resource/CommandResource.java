@@ -11,6 +11,10 @@ import com.github.marcotondi.core.api.ICommandFactory;
 import com.github.marcotondi.core.api.ICommandManager;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -30,7 +34,11 @@ public class CommandResource {
     ICommandFactory commandFactory;
 
     // Record for the request payload
-    public record CreateUserRequest(String username, String email, String actor) {}
+    public record CreateUserRequest(
+            @NotBlank String username,
+            @NotBlank @Email String email,
+            String actor) {
+    }
 
     @POST
     @Path("/users/create")
@@ -50,7 +58,8 @@ public class CommandResource {
     }
 
     // Record for the request payload
-    public record DeleteUserRequest(String email, String actor) {}
+    public record DeleteUserRequest(@NotBlank @Email String email, String actor) {
+    }
 
     @POST
     @Path("/users/delete")
@@ -70,7 +79,8 @@ public class CommandResource {
     }
 
     // Record for the request payload
-    public record SleepRequest(int seconds, String actor) {}
+    public record SleepRequest(@Min(0) @Max(600) int seconds, String actor) {
+    }
 
     @POST
     @Path("/sleep")

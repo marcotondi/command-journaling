@@ -10,13 +10,13 @@ import org.jboss.logging.Logger;
 
 import com.github.marcotondi.application.CommandName;
 import com.github.marcotondi.application.user.model.DeleteUserDescriptor;
+import com.github.marcotondi.application.user.model.User;
 import com.github.marcotondi.application.user.repository.UserRepository;
 import com.github.marcotondi.core.api.CommandType;
 import com.github.marcotondi.core.domain.Command;
 import com.github.marcotondi.core.domain.CommandDescriptor;
 import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 
 @Dependent
 @CommandType(CommandName.DELETE_USER)
@@ -26,8 +26,9 @@ public class DeleteUserCommand extends Command<String> {
     @Inject
     private UserRepository userRepository;
 
+    private User deletedUser;
+
     @Override
-    @Transactional
     public String doExecute() {
         var descriptor = (DeleteUserDescriptor) getDescriptor();
 
@@ -36,6 +37,7 @@ public class DeleteUserCommand extends Command<String> {
 
         return userRepository.findByEmail(email)
                 .map(user -> {
+                    this.deletedUser = user;
                     userRepository.delete(user);
                     return "User '" + email + "' deleted successfully with ID: " + user.id;
                 })
@@ -44,8 +46,14 @@ public class DeleteUserCommand extends Command<String> {
 
     @Override
     public String doUndo() {
-        LOG.info("Undo operation is not supported for DeleteUserCommand.");
-        return "Undo operation is not supported for DeleteUserCommand.";
+        if (deletedUser == null) {
+            LOG.info("Undo DeleteUserCommand: nothing to restore.");
+            return "Nothing to restore for DeleteUserCommand.";
+        }
+
+        userRepository.persist(deletedUser);
+        LOG.infof("Restored user '%s' during undo.", deletedUser.getEmail());
+        return "User '" + deletedUser.getEmail() + "' restored during undo.";
     }
 
     @Override

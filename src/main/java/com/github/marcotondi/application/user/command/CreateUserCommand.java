@@ -49,8 +49,15 @@ public class CreateUserCommand extends Command<String> {
 
     @Override
     public String doUndo() {
-        LOG.info("Undo operation is not supported for CreateUserDescriptor.");
-        return "Undo operation is not supported for CreateUserDescriptor.";
+        String email = ((CreateUserDescriptor) getDescriptor()).getEmail();
+        LOG.infof("Undoing CreateUserCommand for email: %s", email);
+
+        return userRepository.findByEmail(email)
+                .map(user -> {
+                    userRepository.delete(user);
+                    return "User '" + email + "' removed during undo.";
+                })
+                .orElse("User '" + email + "' not found during undo.");
     }
 
     @Override
