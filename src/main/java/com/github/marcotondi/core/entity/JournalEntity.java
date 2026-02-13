@@ -7,7 +7,9 @@ import static com.mongodb.client.model.Filters.gte;
 import static com.mongodb.client.model.Filters.lte;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,15 +21,22 @@ import org.bson.conversions.Bson;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Accumulators;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.IndexOptions;
+import com.mongodb.client.model.Indexes;
+import com.mongodb.client.model.Updates;
+import com.mongodb.client.result.UpdateResult;
 
 import com.github.marcotondi.core.CommandStatus;
 import com.github.marcotondi.core.CoreKeys;
 import io.quarkus.mongodb.panache.PanacheMongoEntity;
 import io.quarkus.mongodb.panache.common.MongoEntity;
 
-@MongoEntity(collection = "command_journal")
+@MongoEntity(collection = JournalEntity.COLLECTION)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class JournalEntity extends PanacheMongoEntity {
+
+    public static final String COLLECTION = "command_journal";
 
     public String commandId;
     public String commandType;
@@ -42,6 +51,9 @@ public class JournalEntity extends PanacheMongoEntity {
 
     public Document result;
     public String errorMessage;
+
+    /** Set when a process claims the command for recovery/restart; stale claims can be taken over. */
+    public LocalDateTime recoveryStartedAt;
 
     public Map<String, String> metadata;
 
@@ -90,25 +102,43 @@ public class JournalEntity extends PanacheMongoEntity {
     // ------------------------------------------------------------
     // Query by properties
     // ------------------------------------------------------------
-    public static List<JournalEntity> findByCommandType(String commandType) {
-        return find(CoreKeys.COMMAND_TYPE, commandType).list();
-    }
-
-    public static List<JournalEntity> findByActor(String actor) {
-        return find(CoreKeys.ACTOR, actor).list();
-    }
-
-    public static List<JournalEntity> findByStatus(String status) {
-        return find(CoreKeys.STATUS, status).list();
-    }
-
     public static List<JournalEntity> findInterruptedCommands() {
         return find("status IN ?1",
                 Arrays.asList(
                         CommandStatus.PENDING.name(),
                         CommandStatus.EXECUTING.name(),
+                        CommandStatus.RECOVERING.name(),
                         CommandStatus.EXECUTING_ROLL_BACK.name()))
                 .list();
+    }
+
+    /**
+     * Atomically claims the command by moving it to RECOVERING, but only if it is
+     * still in one of the given statuses and no live recovery lease is held.
+     * Returns true only for the caller that won.
+     */
+    public static boolean claim(String commandId, Collection<String> fromStatuses, LocalDateTime staleBefore) {
+        UpdateResult result = getMongoCollection().updateOne(
+                Filters.and(
+                        Filters.eq(CoreKeys.COMMAND_ID, commandId),
+                        Filters.in(CoreKeys.STATUS, fromStatuses),
+                        Filters.or(
+                                Filters.exists("recoveryStartedAt", false),
+                                Filters.lt("recoveryStartedAt", staleBefore))),
+                Updates.combine(
+                        Updates.set(CoreKeys.STATUS, CommandStatus.RECOVERING.name()),
+                        Updates.set("recoveryStartedAt", LocalDateTime.now(ZoneOffset.UTC))));
+        return result.getModifiedCount() > 0;
+    }
+
+    /**
+     * Creates the unique index that makes commandId the journal's identity key.
+     * Idempotent: MongoDB ignores the call when the index already exists.
+     */
+    public static void ensureCommandIdIndex() {
+        getMongoCollection().createIndex(
+                Indexes.ascending(CoreKeys.COMMAND_ID),
+                new IndexOptions().unique(true));
     }
 
     // ------------------------------------------------------------
@@ -141,7 +171,7 @@ public class JournalEntity extends PanacheMongoEntity {
     }
 
     private static MongoCollection<Document> getMongoCollection() {
-        return mongoDatabase().getCollection("command_journal");
+        return mongoDatabase().getCollection(COLLECTION);
     }
 
 }

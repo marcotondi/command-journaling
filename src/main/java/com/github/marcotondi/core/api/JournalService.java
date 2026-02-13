@@ -1,10 +1,10 @@
 package com.github.marcotondi.core.api;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 import com.github.marcotondi.core.CommandStatus;
-import com.github.marcotondi.core.JournalResponse;
 import com.github.marcotondi.core.domain.CommandDescriptor;
 import com.github.marcotondi.core.entity.JournalEntity;
 
@@ -30,8 +30,12 @@ public interface JournalService {
 
     Optional<JournalEntity> findBySubCommandId(String subCommandId);
 
-    List<JournalEntity> getAllEntries();
+    List<JournalEntity> getAllEntries(int page, int size);
 
-    JournalResponse getJournalByCommandId(String commandId);
+    /**
+     * Atomically moves a command to RECOVERING, but only from one of the given
+     * statuses. Returns true only for the caller that won the claim.
+     */
+    boolean claim(String commandId, Collection<CommandStatus> fromStatuses);
 
 }

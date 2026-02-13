@@ -53,7 +53,20 @@ public abstract class CommandComposite<R> implements ICommand<List<R>> {
             } catch (Exception e) {
                 LOG.errorf(e, "Command execution failed for command ID %s",
                         command.getDescriptor().getCommandId());
-                journal.updateJournalOnFailure(entry, e);
+
+                // Atomicity: roll back the sub-commands already executed, in reverse order.
+                List<Exception> rollbackFailures = undoExecutedCommands(results);
+                long duration = Duration.ofNanos(System.nanoTime() - startNano).toMillis();
+
+                if (rollbackFailures.isEmpty()) {
+                    journal.updateJournalOnRollBack(entry, results, duration);
+                } else {
+                    String details = rollbackFailures.stream()
+                            .map(Exception::getMessage)
+                            .collect(Collectors.joining(", "));
+                    journal.updateJournalOnFailure(entry, new CommandExecutionException(
+                            e.getMessage() + " | rollback failures: " + details, e));
+                }
 
                 throw new CommandExecutionException(
                         "Execution failed for sub-command " +
@@ -72,7 +85,6 @@ public abstract class CommandComposite<R> implements ICommand<List<R>> {
     @Override
     public List<R> undo() {
         List<R> results = new ArrayList<>();
-        List<Exception> failures = new ArrayList<>();
 
         var commandDescriptors = commandDescriptors();
 
@@ -80,28 +92,10 @@ public abstract class CommandComposite<R> implements ICommand<List<R>> {
                 getDescriptor(),
                 commandDescriptors);
 
-        Iterator<String> it = descriptor.getExecuteCommandId().descendingIterator();
         long startNano = System.nanoTime();
-
-        while (it.hasNext()) {
-            String commandId = it.next();
-            LOG.debugf("Rollback command in: %s", commandId);
-
-            Command<R> targetCommand = commands.stream()
-                    .filter(cmd -> commandId.equals(cmd.getDescriptor().getCommandId()))
-                    .findFirst()
-                    .orElseThrow(() -> new CommandExecutionException(
-                            "Command not found for ID: " + commandId));
-
-            try {
-                results.add(targetCommand.doUndo());
-            } catch (Exception e) {
-                LOG.errorf(e, "Undo-Command execution failed for command ID %s", commandId);
-                failures.add(e);
-            }
-        }
-
+        List<Exception> failures = undoExecutedCommands(results);
         long durationMs = Duration.ofNanos(System.nanoTime() - startNano).toMillis();
+
         journal.updateJournalOnRollBack(entry, results, durationMs);
 
         if (!failures.isEmpty()) {
@@ -117,6 +111,35 @@ public abstract class CommandComposite<R> implements ICommand<List<R>> {
         return results;
     }
 
+    private List<Exception> undoExecutedCommands(List<R> results) {
+        List<Exception> failures = new ArrayList<>();
+        Iterator<String> it = descriptor.getExecuteCommandId().descendingIterator();
+
+        while (it.hasNext()) {
+            String commandId = it.next();
+            LOG.debugf("Rollback command in: %s", commandId);
+
+            Command<R> targetCommand = commands.stream()
+                    .filter(cmd -> commandId.equals(cmd.getDescriptor().getCommandId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (targetCommand == null) {
+                failures.add(new CommandExecutionException("Command not found for ID: " + commandId));
+                continue;
+            }
+
+            try {
+                results.add(targetCommand.doUndo());
+            } catch (Exception e) {
+                LOG.errorf(e, "Undo-Command execution failed for command ID %s", commandId);
+                failures.add(e);
+            }
+        }
+
+        return failures;
+    }
+
     @Override
     public CommandDescriptor getDescriptor() {
         return this.descriptor;
@@ -127,10 +150,6 @@ public abstract class CommandComposite<R> implements ICommand<List<R>> {
             throw new IllegalArgumentException("CommandComposite requires a CompositeDescriptor");
         }
         this.descriptor = (CompositeDescriptor) descriptor;
-    }
-
-    public List<Command<R>> getCommands() {
-        return this.commands;
     }
 
     public void addCommand(ICommand<R> command) {

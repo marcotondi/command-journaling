@@ -11,25 +11,35 @@ import java.util.Optional;
 import org.bson.Document;
 import org.jboss.logging.Logger;
 
+import com.mongodb.DuplicateKeyException;
+import io.quarkus.runtime.StartupEvent;
+import jakarta.enterprise.event.Observes;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.github.marcotondi.core.CommandStatus;
-import com.github.marcotondi.core.JournalResponse;
 import com.github.marcotondi.core.api.JournalService;
 import com.github.marcotondi.core.domain.CommandDescriptor;
 import com.github.marcotondi.core.entity.JournalEntity;
+import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.NotFoundException;
 
 @ApplicationScoped
 public class JournalServiceImpl implements JournalService {
     private static final Logger LOG = Logger.getLogger(JournalServiceImpl.class);
 
+    // A recovery lease held longer than this is considered stale (crashed process) and can be re-claimed.
+    private static final long RECOVERY_LEASE_SECONDS = 60;
+
     @Inject
     ObjectMapper objectMapper;
+
+    void onStart(@Observes StartupEvent ev) {
+        JournalEntity.ensureCommandIdIndex();
+    }
 
     // ------------------------------------------------------------
     // ENTRY CREATION
@@ -40,8 +50,7 @@ public class JournalServiceImpl implements JournalService {
     public JournalEntity getOrCreateEntry(
             CommandDescriptor descriptor) {
 
-        return findByCommandId(descriptor.getCommandId().toString())
-                .orElseGet(() -> createJournalEntity(descriptor, null));
+        return findOrCreate(descriptor, null);
     }
 
     @Override
@@ -50,8 +59,24 @@ public class JournalServiceImpl implements JournalService {
             CommandDescriptor descriptor,
             CommandDescriptor[] commandDescriptors) {
 
-        return findByCommandId(descriptor.getCommandId().toString())
-                .orElseGet(() -> createJournalEntity(descriptor, commandDescriptors));
+        return findOrCreate(descriptor, commandDescriptors);
+    }
+
+    private JournalEntity findOrCreate(
+            CommandDescriptor descriptor,
+            CommandDescriptor[] commandDescriptors) {
+
+        String commandId = descriptor.getCommandId().toString();
+
+        return findByCommandId(commandId).orElseGet(() -> {
+            try {
+                return createJournalEntity(descriptor, commandDescriptors);
+            } catch (DuplicateKeyException e) {
+                // Lost a concurrent check-then-write race: the winner inserted it already.
+                LOG.warnf("Concurrent creation for command %s, reusing existing entry", commandId);
+                return findByCommandId(commandId).orElseThrow(() -> e);
+            }
+        });
     }
 
     @Override
@@ -171,16 +196,17 @@ public class JournalServiceImpl implements JournalService {
     }
 
     @Override
-    public List<JournalEntity> getAllEntries() {
-        return JournalEntity.listAll();
+    public List<JournalEntity> getAllEntries(int page, int size) {
+        return JournalEntity.findAll(Sort.descending("startTime"))
+                .page(page, size)
+                .list();
     }
 
     @Override
-    public JournalResponse getJournalByCommandId(String commandId) {
-        var journal = JournalEntity.findByCommandId(commandId)
-                .orElseThrow(() -> new NotFoundException("Command not found: " + commandId));
-
-        return JournalResponse.from(journal);
+    public boolean claim(String commandId, Collection<CommandStatus> fromStatuses) {
+        List<String> names = fromStatuses.stream().map(Enum::name).toList();
+        LocalDateTime staleBefore = LocalDateTime.now(ZoneOffset.UTC).minusSeconds(RECOVERY_LEASE_SECONDS);
+        return JournalEntity.claim(commandId, names, staleBefore);
     }
 
     // ------------------------------------------------------------

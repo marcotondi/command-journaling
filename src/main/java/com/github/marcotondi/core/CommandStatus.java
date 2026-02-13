@@ -3,6 +3,7 @@ package com.github.marcotondi.core;
 public enum CommandStatus {
     PENDING,
     EXECUTING,
+    RECOVERING,
     EXECUTING_ROLL_BACK,
     COMPLETED,
     FAILED,

@@ -1,6 +1,7 @@
 package com.github.marcotondi.core.service;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +17,7 @@ import com.github.marcotondi.core.domain.CommandComposite;
 import com.github.marcotondi.core.domain.CommandDescriptor;
 import com.github.marcotondi.core.domain.CompositeDescriptor;
 import com.github.marcotondi.core.domain.exception.CommandNotFoundException;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
@@ -27,6 +29,33 @@ public class CommandFactoryImpl implements ICommandFactory {
 
     @Inject
     Instance<ICommand<?>> commandPrototypes;
+
+    private Map<String, Class<?>> commandTypes = Map.of();
+
+    @PostConstruct
+    void indexCommandTypes() {
+        Map<String, Class<?>> types = new HashMap<>();
+        for (ICommand<?> prototype : commandPrototypes) {
+            Class<?> beanClass = resolveCommandClass(prototype);
+            CommandType annotation = beanClass.getAnnotation(CommandType.class);
+            if (annotation != null) {
+                types.put(annotation.value(), beanClass);
+            }
+        }
+        this.commandTypes = types;
+        LOG.debugf("Indexed %d command types", types.size());
+    }
+
+    private Class<?> resolveCommandClass(ICommand<?> prototype) {
+        Class<?> beanClass = prototype.getClass();
+        while (beanClass != null && beanClass != Object.class) {
+            if (beanClass.isAnnotationPresent(CommandType.class)) {
+                return beanClass;
+            }
+            beanClass = beanClass.getSuperclass();
+        }
+        return prototype.getClass();
+    }
 
     @Override
     public <R> ICommand<R> buildCommand(CommandDescriptor descriptor) {
@@ -136,37 +165,13 @@ public class CommandFactoryImpl implements ICommandFactory {
     private <R> ICommand<R> createCommandInstance(String commandType) {
         validateNotNull(commandType, "Command type cannot be null");
 
-        LOG.debugf("Searching for Command annotated with type: %s", commandType);
-
-        return (ICommand<R>) commandPrototypes.stream()
-                .filter(this::hasCommandTypeAnnotation)
-                .filter(cmd -> getCommandTypeValue(cmd).equals(commandType))
-                .findFirst()
-                .orElseThrow(() -> new CommandNotFoundException(commandType));
-    }
-
-    private boolean hasCommandTypeAnnotation(ICommand<?> command) {
-        return getBeanClass(command).isAnnotationPresent(CommandType.class);
-    }
-
-    private String getCommandTypeValue(ICommand<?> command) {
-        return getBeanClass(command).getAnnotation(CommandType.class).value();
-    }
-
-    private Class<?> getBeanClass(Object beanInstance) {
-        Class<?> beanClass = beanInstance.getClass();
-
-        // Handle CDI proxies more robustly
-        while (beanClass.getName().contains("$Proxy") ||
-                beanClass.getName().contains("_ClientProxy") ||
-                beanClass.getName().contains("$$")) {
-            beanClass = beanClass.getSuperclass();
-            if (beanClass == null || beanClass == Object.class) {
-                return beanInstance.getClass();
-            }
+        Class<?> beanClass = commandTypes.get(commandType);
+        if (beanClass == null) {
+            throw new CommandNotFoundException(commandType);
         }
 
-        return beanClass;
+        LOG.debugf("Building command for type %s from class %s", commandType, beanClass.getSimpleName());
+        return (ICommand<R>) commandPrototypes.select((Class) beanClass).get();
     }
 
     private void validateNotNull(Object obj, String message) {

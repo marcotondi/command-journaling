@@ -29,7 +29,7 @@ public abstract class CompositeDescriptor extends CommandDescriptor {
     }
 
     public Deque<String> getExecuteCommandId() {
-        return this.executeCommandId;
+        return new ArrayDeque<>(this.executeCommandId);
     }
 
     protected void addExecuteCommandId(String executeCommandId) {
